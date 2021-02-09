@@ -10,8 +10,17 @@ class Comment(Token):
     """
     pattern: Pattern = re.compile('^(//|/\*)')
 
+    _NAME_MAP = {
+        '//': 'inlinecmt',
+        '/*': 'blockcmt'
+    }
+
     def __init__(self, code: str):
-        super().__init__(Comment.extract_comment(code))
+        lexm = Comment.pattern.match(code).group()
+        super().__init__(Comment.extract_comment(code), Comment._NAME_MAP[lexm])
+
+    def get_num_lines(self):
+        return self.lexeme.count('\n')
 
     @staticmethod
     def extract_comment(code: str) -> str:

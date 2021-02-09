@@ -7,12 +7,24 @@ from typing import Union
 
 class Token(abc.ABC):
 
-    def __init__(self, lexeme: str):
+    def __init__(self, lexeme: str, name: str):
         self.lexeme: str = lexeme
-        self.position = None
+        self.name: str = name
+        self.position: Union[int, None] = None
 
     def replace_self(self, code: str) -> str:
-        return str.lstrip(code, self.lexeme)
+        # lexm = self.lexeme
+        # try1 = code.replace(lexm, '')
+        return code.replace(self.lexeme, '', 1)
+
+    def set_position(self, line_num: int):
+        self.position = line_num
+
+    def tok_str(self):
+        return f'[{self.name}, {self.lexeme}, {self.position if self.position is not None else "Position unassigned"}]'
+
+    def __len__(self):
+        return len(self.lexeme)
 
     @staticmethod
     def match(code: str) -> bool:

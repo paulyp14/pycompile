@@ -7,8 +7,23 @@ from pycompile.lex.token.token import Token
 class Punctuation(Token):
     pattern: Pattern = re.compile('^(\{|\}|\(|\)|\[|\]|;|,|\.|::|:)')
 
+    _NAME_MAP = {
+        '{': 'opencubr',
+        '}': 'closecubr',
+        '(': 'openpar',
+        ')': 'closepar',
+        '[': 'opensqbr',
+        ']': 'closesqbr',
+        ';': 'semi',
+        ',': 'comma',
+        '.': 'dot',
+        '::': 'coloncolon',
+        ':': 'colon'
+    }
+
     def __init__(self, code: str):
-        super().__init__(Punctuation.pattern.match(code).group())
+        lexm = Punctuation.pattern.match(code).group()
+        super().__init__(lexm, Punctuation._NAME_MAP[lexm])
 
     @staticmethod
     def match(code: str) -> bool:

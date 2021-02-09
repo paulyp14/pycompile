@@ -8,7 +8,7 @@ class String(Token):
     pattern: Pattern = re.compile('^"[a-zA-Z0-9_ ]*"')
 
     def __init__(self, code: str):
-        super().__init__(String.pattern.match(code).group())
+        super().__init__(String.pattern.match(code).group(), 'stringlit')
 
     @staticmethod
     def match(code: str) -> bool:
