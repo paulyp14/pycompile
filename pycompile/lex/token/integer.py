@@ -19,7 +19,8 @@ class Integer(Token):
     it is included as a static property of Float just for clarity/readability
     """
     _accepted_pattern: str = '([1-9][0-9]*|0)'
-    pattern: Pattern = re.compile('^(?!([1-9][0-9]*|0)\.)(?!(0[0-9]+))([1-9][0-9]*|0)')
+    # pattern: Pattern = re.compile('^(?!([1-9][0-9]*|0)\.)(?!(0[0-9]+))([1-9][0-9]*|0)')
+    pattern: Pattern = re.compile('^(?!(0[0-9]+))([1-9][0-9]*|0)')
 
     def __init__(self, code: str):
         super().__init__(Integer.pattern.match(code).group(), 'intnum')

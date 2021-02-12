@@ -1,0 +1,17 @@
+/* good
+multiline
+comment
+  /* inner
+     /* inner
+     */
+  */
+*/
+
+float abcdf = 190;
+
+/*
+
+multiline comment
+/* it will be unterminated */
+// inner inline
+

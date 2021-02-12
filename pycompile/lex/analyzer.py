@@ -37,7 +37,7 @@ class LexicalAnalyzer:
             # add the string representation of the token to the tokenized code
             self.tokenized += (
                 self.code[start_idx: start_idx + tok_start] +
-                (self.tokens[-1].tok_str() if raw_code != '' else '')
+                self.tokens[-1].tok_str()
             )
             # set the end as the new start
             start_idx += tok_end
@@ -81,14 +81,19 @@ class LexicalAnalyzer:
         else:
             # there is something else invalid
             whitespace_match = LexicalAnalyzer.whitespace.search(code)
-            idx = len(code) if not whitespace_match else whitespace_match.start()
-            # whitespace_idx = len(code) if not whitespace_match else whitespace_match.start()
-            # next_tok_idx = whitespace_idx
-            # for i in range(1, len(code)):
-            #     if LexicalAnalyzer.find_match(code[i:].lstrip()) is not None:
-            #         next_tok_idx = i
-            #         break
-            # idx = next_tok_idx if next_tok_idx < whitespace_idx else whitespace_idx
+            # =====
+            # breaking invalid lexemes only on whitespace
+            # idx = len(code) if not whitespace_match else whitespace_match.start()
+
+            # =====
+            # breaking invalid lexemes on the next valid
+            whitespace_idx = len(code) if not whitespace_match else whitespace_match.start()
+            next_tok_idx = whitespace_idx
+            for i in range(1, len(code)):
+                if LexicalAnalyzer.find_match(code[i:].lstrip()) is not None:
+                    next_tok_idx = i
+                    break
+            idx = next_tok_idx if next_tok_idx < whitespace_idx else whitespace_idx
         return Invalid(code[:idx])
 
     @staticmethod
