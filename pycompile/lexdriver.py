@@ -4,10 +4,10 @@ from pathlib import Path
 from pycompile.lex.analyzer import LexicalAnalyzer
 
 
-def analyze_test_file(input_file):
+def analyze_test_file(input_file: Path, output_dir: str):
     print(f'   Analyzing file: {input_file}')
-    token_name = f'{input_file.stem}.outlextokens'
-    error_name = f'{input_file.stem}.outlexerrors'
+    token_name = path_join(output_dir, f'{input_file.stem}.outlextokens')
+    error_name = path_join(output_dir, f'{input_file.stem}.outlexerrors')
 
     analyzer = LexicalAnalyzer()
 
@@ -19,18 +19,21 @@ def analyze_test_file(input_file):
     analyzer.write_errors(error_name)
 
 
-def run_tests(test_dir: str):
+def run_tests(test_dir: str, output_dir: str):
     print('Testing LexicalAnalyzer...')
-    print(f'   Using dir: {test_dir}')
+    print(f'Using dir: {test_dir}')
+    print(f'Outputting to: {output_dir}')
     for test_file in Path(test_dir).iterdir():
         if test_file.suffix == '.src':
-            analyze_test_file(test_file)
+            analyze_test_file(test_file, output_dir)
 
 
-def main(test_dir=None):
+def main(test_dir: str = None, output_dir: str = None):
     if test_dir is None:
         test_dir = path_join(dirname(realpath(__file__)), 'lex', 'tests')
-    run_tests(test_dir)
+    if output_dir is None:
+        output_dir = path_join(dirname(realpath(__file__)), 'lex', 'tests')
+    run_tests(test_dir, output_dir)
 
 
 if __name__ == '__main__':
