@@ -37,7 +37,7 @@ class LexicalAnalyzer:
             # add the string representation of the token to the tokenized code
             self.tokenized += (
                 self.code[start_idx: start_idx + tok_start] +
-                self.tokens[-1].tok_str()
+                (self.tokens[-1].tok_str() if not self.tokens[-1].was_inserted() else '')
             )
             # set the end as the new start
             start_idx += tok_end

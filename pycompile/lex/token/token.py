@@ -11,6 +11,7 @@ class Token(abc.ABC):
         self.lexeme: str = lexeme
         self.name: str = name
         self.position: Union[int, None] = None
+        self.inserted = False
 
     def replace_self(self, code: str) -> str:
         # lexm = self.lexeme
@@ -20,8 +21,12 @@ class Token(abc.ABC):
     def set_position(self, line_num: int):
         self.position = line_num
 
-    def tok_str(self):
+    def tok_str(self) -> str:
+        self.inserted = True
         return f'[{self.name}, {self.lexeme}, {self.position if self.position is not None else "Position unassigned"}]'
+
+    def was_inserted(self) -> bool:
+        return self.inserted
 
     def __len__(self):
         return len(self.lexeme)
