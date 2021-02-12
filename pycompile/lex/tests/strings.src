@@ -1,0 +1,8 @@
+"this is a string"{};
+"this is _ a string too 090 991 lakjsdlk 1092 10 ";
+"this {} is not a string"
+// "an invalid 78 !@#$ ! string in a comment so it should be ignored"
+/*
+"an invalid 78 !@#$ ! string in a comment so it should be ignored"
+*/
+" unterminaated string :(

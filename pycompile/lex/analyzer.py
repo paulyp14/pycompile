@@ -77,7 +77,8 @@ class LexicalAnalyzer:
             return None
         elif code[0] == '"' and len(code) > 1:
             # there is an invalid string
-            idx = code.find('"')
+            idx = code[1:].find('"')
+            idx = idx + 2 if idx != -1 else len(code)
         else:
             # there is something else invalid
             whitespace_match = LexicalAnalyzer.whitespace.search(code)

@@ -1,5 +1,6 @@
-from os.path import dirname, join as path_join, realpath
+import argparse
 from pathlib import Path
+from os.path import dirname, join as path_join, realpath
 
 from pycompile.lex.analyzer import LexicalAnalyzer
 
@@ -37,4 +38,8 @@ def main(test_dir: str = None, output_dir: str = None):
 
 
 if __name__ == '__main__':
-    main()
+    ap = argparse.ArgumentParser()
+    ap.add_argument('--test_dir', '-td', help='Directory to look for .src files in', default=None)
+    ap.add_argument('--output_dir', '-od', help='Directory to place output files in', default=None)
+    args = ap.parse_args()
+    main(args.test_dir, args.output_dir)
