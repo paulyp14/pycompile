@@ -6,8 +6,8 @@ from pycompile.lex.analyzer import LexicalAnalyzer
 
 def analyze_test_file(input_file):
     print(f'   Analyzing file: {input_file}')
-    token_name = f'{input_file.name}.outlextokens'
-    error_name = f'{input_file.name}.outlexerrors'
+    token_name = f'{input_file.stem}.outlextokens'
+    error_name = f'{input_file.stem}.outlexerrors'
 
     analyzer = LexicalAnalyzer()
 
