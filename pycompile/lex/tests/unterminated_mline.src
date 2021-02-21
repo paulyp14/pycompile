@@ -9,6 +9,14 @@ comment
 
 float abcdf = 190;
 
+// comment here
+/* new comment
+ something
+
+
+ something
+ */
+
 /*
 
 multiline comment

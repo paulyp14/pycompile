@@ -16,6 +16,13 @@
 12
 123
 12345
+2378910
+00100
+01.23
+1.2300
+1.22e000
+12.34e001
+12.32e00100
 	
 1.23	
 12.34	
@@ -26,7 +33,10 @@ abc
 abc1
 a1bc	
 abc_1abc	
-abc1_abc	
+abc1_abc
+_abc1ab
+1abc
+_1abc
 
 /* this is a single line block comment */
 
