@@ -154,7 +154,6 @@ STATBLOCK -> lcurbr REPTSTATBLOCK1 rcurbr  .
 STATBLOCK -> STATEMENT  .
 STATBLOCK ->  .
 
-STATEMENT -> ASSIGNSTAT semi  .
 STATEMENT -> if lpar RELEXPR rpar then STATBLOCK else STATBLOCK semi  .
 STATEMENT -> while lpar RELEXPR rpar STATBLOCK semi  .
 STATEMENT -> read lpar VARIABLE rpar semi  .
@@ -162,7 +161,9 @@ STATEMENT -> write lpar EXPR rpar semi  .
 STATEMENT -> return lpar EXPR rpar semi  .
 STATEMENT -> break semi  .
 STATEMENT -> continue semi  .
-STATEMENT -> FUNCTIONCALL semi  .
+STATEMENT -> STATEMENTAMBIG  .
+STATEMENTAMBIG -> ASSIGNSTAT semi  .
+STATEMENTAMBIG -> FUNCTIONCALL semi  .
 
 TERM -> FACTOR RIGHTRECTERM  .
 
