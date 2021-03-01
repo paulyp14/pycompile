@@ -28,7 +28,7 @@ func bubbleSort(integer arr[], integer size) : void
 }
    
 /* Print the array */
-printArray(integer arr[], integer size) : void 
+func printArray(integer arr[], integer size) : void
 {
   var
   {

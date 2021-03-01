@@ -176,12 +176,22 @@
 
 <statement> ::= 'if' '(' <relExpr> ')' 'then' <statBlock> 'else' <statBlock> ';'
 <statement> ::= 'while' '(' <relExpr> ')' <statBlock> ';'
-<statement> ::= 'read' '(' <variable> ')' ';'
+<statement> ::= 'read' '(' <statVariable> ';'
 <statement> ::= 'write' '(' <expr> ')' ';'
 <statement> ::= 'return' '(' <expr> ')' ';'
 <statement> ::= 'break' ';'
 <statement> ::= 'continue' ';'
 <statement> ::= <assignFuncStart> ';'
+
+<statVariable> ::= 'id' <statVarRept> <statVarEnd>
+<statVarRept> ::= '(' <aParams> ')' '.' <statVarRept2>
+<statVarRept> ::= <indiceRept>
+<statVarRept2> ::= 'id' <statVarRept>
+<indiceRept> ::= '[' <arithExprNoRel> ']' <indiceRept>
+<indiceRept> ::= '.' <statVarRept2>
+<indiceRept> ::= ')'
+<statVarEnd> ::= '[' <arithExprNoRel> ']' <statVarEnd>
+<statVarEnd> ::= EPSILON
 
 <type> ::= 'integer'
 <type> ::= 'float'

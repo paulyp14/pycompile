@@ -103,3 +103,16 @@ class LexicalAnalyzer:
             if token_class.match(code):
                 return token_class(code)
         return None
+
+    def add_final_token(self):
+        self.tokens.append(Final())
+
+    def remove_comments(self):
+        temp_tokens = self.tokens
+        self.tokens = []
+        for token in temp_tokens:
+            if not isinstance(token, Comment):
+                self.tokens.append(token)
+
+    def __len__(self):
+        return len(self.tokens)
