@@ -104,6 +104,15 @@ class QUADRATIC inherits POLYNOMIAL {
 	public func evaluate(float x) : float;
 };
 
+class GHIBBERISH in alskjd al j asd a lkj {
+    aslkdj laksjd 
+    alskd 
+    asdm as ma da
+    alskd a 
+    asd mas 
+    a am  lm_l a_d_ lm _dma asl_d m
+};
+
 // ====== Function Definitions ====== //
 func POLYNOMIAL::evaluate(float x) : float
 {

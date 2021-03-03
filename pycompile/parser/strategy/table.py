@@ -4,6 +4,7 @@ from pycompile.lex.token import *
 from pycompile.utils.stack import Stack
 from pycompile.parser.strategy.helper import Table
 from pycompile.parser.strategy.strategy import ParsingStrategy
+from pycompile.parser.syntax.error import SyntaxParsingError
 
 
 class TableParser(ParsingStrategy):
@@ -27,14 +28,14 @@ class TableParser(ParsingStrategy):
                     self.pop()
                     cur_tok = self.next_token()
                 else:
-                    self.__found_error()
+                    cur_tok = self.__found_error(cur_tok)
             else:
                 # non-terminal
                 if self.non_terminal_match(cur_sym, cur_tok):
                     self.pop()
                     self.inverse_push(cur_tok, cur_sym)
                 else:
-                    self.__found_error()
+                    cur_tok = self.__found_error(cur_tok)
         # all symbols
         if not isinstance(cur_tok, Final) or self.encountered_error:
             self.success = False
@@ -50,10 +51,11 @@ class TableParser(ParsingStrategy):
         self.rules.append(self.symbol_stack.contents())
         return item
 
-    def __found_error(self):
-        self.skip_errors()
+    def __found_error(self, token: Token) -> Token:
+        token = self.skip_errors(token)
         if not self.encountered_error:
             self.encountered_error = True
+        return token
 
     def inverse_push(self, token: Token, symbol: str):
         tokens = self.table.get(symbol, token)
@@ -81,5 +83,29 @@ class TableParser(ParsingStrategy):
         self.move()
         return next_tok
 
-    def skip_errors(self):
-        pass
+    def skip_errors(self, token: Token) -> Token:
+        self.errors.append(SyntaxParsingError(
+            token,
+            self.table.get_first_for_symbol(self.symbol_stack.peek()),
+            self.table.get_follow_for_symbol(self.symbol_stack.peek())
+        ))
+        if isinstance(token, Final) or self.table.in_first(self.symbol_stack.peek(), token):
+            self.pop()
+            if not isinstance(token, Final):
+                token = self.next_token()
+        else:
+            breaker = True
+            while breaker:
+                if (
+                    isinstance(token, Final) or
+                    self.table.in_first(self.symbol_stack.peek(), token) or
+                    (
+                        self.table.epsilon_in_first(self.symbol_stack.peek()) and
+                        self.table.in_follow(self.symbol_stack.peek(), token)
+                    )
+                ):
+                    breaker = False
+                    break
+                # scan
+                token = self.next_token()
+        return token

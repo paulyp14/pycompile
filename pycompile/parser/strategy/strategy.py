@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 
 from pycompile.lex.token import Token
 from pycompile.lex.analyzer import LexicalAnalyzer
+from pycompile.parser.syntax.error import SyntaxParsingError
 
 
 class ParsingStrategy(ABC):
@@ -15,6 +16,7 @@ class ParsingStrategy(ABC):
         self.lookahead: Union[Token, None] = None
         self.success: bool = False
         self.rules: List[str] = []
+        self.errors: List[SyntaxParsingError] = []
 
     def reset(self, code: str):
         self.code = code

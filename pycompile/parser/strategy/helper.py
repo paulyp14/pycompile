@@ -190,8 +190,8 @@ class Table:
         # if 'EPSILON' not in self.rules[non_term].keys() and row['nullable'] == 'yes':
         #     print('UHOH')
 
-        # extra = ['EPSILON'] if 'EPSILON' in self.rules[non_term].keys() else []
-        return [self.get_calgary_translated(x) for x in row[set_name].split() if x not in ['', '∅']]
+        extra = ['EPSILON'] if row['nullable'] == 'yes' and set_name == 'first set' else []
+        return [self.get_calgary_translated(x) for x in row[set_name].split() if x not in ['', '∅']] + extra
 
     def __parse_given_grammar(self, grammar: str):
         lines = grammar.split('\n')
@@ -288,6 +288,37 @@ class Table:
             return isinstance(token, tok_mapping)
         else:
             return token.lexeme == symbol
+
+    def in_first(self, symbol: str, token: Token) -> bool:
+        if isinstance(token, (Float, Integer, String, Id)):
+            using = token.__class__.__name__
+            using = self.type_lookup[using]
+        else:
+            using = token.lexeme
+        return using in self.get_first_for_symbol(symbol)
+
+    def in_follow(self, symbol: str, token: Token) -> bool:
+        if isinstance(token, (Float, Integer, String, Id)):
+            using = token.__class__.__name__
+            using = self.type_lookup[using]
+        else:
+            using = token.lexeme
+        return using in self.get_follow_for_symbol(symbol)
+
+    def epsilon_in_first(self, symbol: str) -> bool:
+        return 'EPSILON' in self.get_first_for_symbol(symbol)
+
+    def get_first_for_symbol(self, symbol: Union[str, Token]) -> List:
+        if isinstance(symbol, str) and symbol not in self.rules.keys():
+            return [symbol]
+        else:
+            return self.first_sets[symbol]
+
+    def get_follow_for_symbol(self, symbol: Union[str, Token]) -> List:
+        if isinstance(symbol, str) and symbol not in self.rules.keys():
+            return [symbol]
+        else:
+            return self.follow_sets[symbol]
 
 
 
