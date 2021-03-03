@@ -1,0 +1,169 @@
+<AParams> ::= <Expr> <AParamsTail> 
+<AParams> ::= EPSILON 
+
+<AParamsTail> ::= ',' <Expr> <AParamsTail> 
+<AParamsTail> ::= EPSILON 
+
+<AddOp> ::= '+' 
+<AddOp> ::= '-' 
+<AddOp> ::= 'or' 
+
+<ArithExpr> ::= <Term> <ArithExprTail> 
+
+<ArithExprTail> ::= <AddOp> <Term> <ArithExprTail> 
+<ArithExprTail> ::= EPSILON 
+
+<ArraySizeRept> ::= '[' <IntNum> ']' <ArraySizeRept> 
+<ArraySizeRept> ::= EPSILON 
+
+<AssignOp> ::= 'assign' 
+
+<AssignStatTail> ::= <AssignOp> <Expr> 
+
+<ClassDecl> ::= 'class' 'id' <Inherit> '{' <ClassDeclBody> '}' ';' <ClassDecl> 
+<ClassDecl> ::= EPSILON 
+
+<ClassDeclBody> ::= <Visibility> <MemberDecl> <ClassDeclBody> 
+<ClassDeclBody> ::= EPSILON 
+
+<ClassMethod> ::= 'sr' 'id' 
+<ClassMethod> ::= EPSILON 
+
+<Expr> ::= <ArithExpr> <ExprTail> 
+
+<ExprTail> ::= <RelOp> <ArithExpr> 
+<ExprTail> ::= EPSILON 
+
+<FParams> ::= <Type> 'id' <ArraySizeRept> <FParamsTail> 
+<FParams> ::= EPSILON 
+
+<FParamsTail> ::= ',' <Type> 'id' <ArraySizeRept> <FParamsTail> 
+<FParamsTail> ::= EPSILON 
+
+<Factor> ::= <FuncOrVar> 
+<Factor> ::= 'intnum' 
+<Factor> ::= 'floatnum' 
+<Factor> ::= 'stringlit' 
+<Factor> ::= '(' <Expr> ')' 
+<Factor> ::= 'not' <Factor> 
+<Factor> ::= <Sign> <Factor> 
+<Factor> ::= 'qm' '[' <Expr> ':' <Expr> ':' <Expr> ']' 
+
+<FuncBody> ::= '{' <MethodBodyVar> <StatementList> '}' 
+
+<FuncDecl> ::= 'func' 'id' '(' <FParams> ')' ':' <FuncDeclTail> ';' 
+
+<FuncDeclTail> ::= <Type> 
+<FuncDeclTail> ::= 'void' 
+
+<FuncDef> ::= <Function> <FuncDef> 
+<FuncDef> ::= EPSILON 
+
+<FuncHead> ::= 'func' 'id' <ClassMethod> '(' <FParams> ')' ':' <FuncDeclTail> 
+
+<FuncOrAssignStat> ::= 'id' <FuncOrAssignStatIdnest> 
+
+<FuncOrAssignStatIdnest> ::= <IndiceRep> <FuncOrAssignStatIdnestVarTail> 
+<FuncOrAssignStatIdnest> ::= '(' <AParams> ')' <FuncOrAssignStatIdnestFuncTail> 
+
+<FuncOrAssignStatIdnestFuncTail> ::= '.' 'id' <FuncStatTail> 
+<FuncOrAssignStatIdnestFuncTail> ::= EPSILON
+
+<FuncStatTail> ::= <IndiceRep> <FuncStatTailIdnest>
+<FuncStatTail> ::= '(' <AParams> ')' <FuncStatTailIdnest>
+
+<FuncStatTailIdnest> ::= '.' 'id' <FuncStatTail>
+<FuncStatTailIdnest> ::= EPSILON
+
+<FuncOrAssignStatIdnestVarTail> ::= '.' 'id' <FuncOrAssignStatIdnest> 
+<FuncOrAssignStatIdnestVarTail> ::= <AssignStatTail> 
+
+<FuncOrVar> ::= 'id' <FuncOrVarIdnest> 
+
+<FuncOrVarIdnest> ::= <IndiceRep> <FuncOrVarIdnestTail> 
+<FuncOrVarIdnest> ::= '(' <AParams> ')' <FuncOrVarIdnestTail> 
+
+<FuncOrVarIdnestTail> ::= '.' 'id' <FuncOrVarIdnest> 
+<FuncOrVarIdnestTail> ::= EPSILON 
+
+<Function> ::= <FuncHead> <FuncBody> 
+
+<IndiceRep> ::= '[' <Expr> ']' <IndiceRep> 
+<IndiceRep> ::= EPSILON 
+
+<Inherit> ::= 'inherits' 'id' <NestedId> 
+<Inherit> ::= EPSILON 
+
+<IntNum> ::= 'intnum' 
+<IntNum> ::= EPSILON 
+
+<MemberDecl> ::= <FuncDecl> 
+<MemberDecl> ::= <VarDecl> 
+
+<MethodBodyVar> ::= 'var' '{' <VarDeclRep> '}' 
+<MethodBodyVar> ::= EPSILON 
+
+<MultOp> ::= '*' 
+<MultOp> ::= '/' 
+<MultOp> ::= 'and' 
+
+<NestedId> ::= ',' 'id' <NestedId> 
+<NestedId> ::= EPSILON 
+
+<Prog> ::= <ClassDecl> <FuncDef> 'main' <FuncBody> 
+
+<RelOp> ::= 'eq' 
+<RelOp> ::= 'neq' 
+<RelOp> ::= 'lt' 
+<RelOp> ::= 'gt' 
+<RelOp> ::= 'leq' 
+<RelOp> ::= 'geq' 
+
+<START> ::= <Prog> 
+
+<Sign> ::= '+' 
+<Sign> ::= '-' 
+
+<StatBlock> ::= '{' <StatementList> '}' 
+<StatBlock> ::= <Statement> 
+<StatBlock> ::= EPSILON 
+
+<Statement> ::= <FuncOrAssignStat> ';' 
+<Statement> ::= 'if' '(' <Expr> ')' 'then' <StatBlock> 'else' <StatBlock> ';' 
+<Statement> ::= 'while' '(' <Expr> ')' <StatBlock> ';' 
+<Statement> ::= 'read' '(' <Variable> ')' ';' 
+<Statement> ::= 'write' '(' <Expr> ')' ';' 
+<Statement> ::= 'return' '(' <Expr> ')' ';' 
+<Statement> ::= 'break' ';' 
+<Statement> ::= 'continue' ';' 
+
+<StatementList> ::= <Statement> <StatementList> 
+<StatementList> ::= EPSILON 
+
+<Term> ::= <Factor> <TermTail> 
+
+<TermTail> ::= <MultOp> <Factor> <TermTail> 
+<TermTail> ::= EPSILON 
+
+<Type> ::= 'integer' 
+<Type> ::= 'float' 
+<Type> ::= 'string' 
+<Type> ::= 'id' 
+
+<VarDecl> ::= <Type> 'id' <ArraySizeRept> ';' 
+
+<VarDeclRep> ::= <VarDecl> <VarDeclRep> 
+<VarDeclRep> ::= EPSILON 
+
+<Variable> ::= 'id' <VariableIdnest> 
+
+<VariableIdnest> ::= <IndiceRep> <VariableIdnestTail> 
+
+<VariableIdnestTail> ::= '.' 'id' <VariableIdnest> 
+<VariableIdnestTail> ::= EPSILON 
+
+<Visibility> ::= 'public' 
+<Visibility> ::= 'private' 
+<Visibility> ::= EPSILON 
+
+

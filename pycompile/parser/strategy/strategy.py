@@ -1,10 +1,11 @@
 from typing import List, Union
+from abc import ABC, abstractmethod
 
 from pycompile.lex.token import Token
 from pycompile.lex.analyzer import LexicalAnalyzer
 
 
-class ParsingStrategy:
+class ParsingStrategy(ABC):
 
     def __init__(self, code: str = None):
         self.code = code
@@ -29,6 +30,7 @@ class ParsingStrategy:
         self.analyzer.remove_comments()
         self._parse()
 
+    @abstractmethod
     def _parse(self):
         ...
 

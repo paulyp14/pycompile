@@ -6,6 +6,9 @@ from pycompile.parser.strategy.strategy import ParsingStrategy
 
 class RecursiveDescentParser(ParsingStrategy):
 
+    def __init__(self, code: str = None):
+        super().__init__(code)
+
     def _parse(self):
         self.set_lookahead()
 
