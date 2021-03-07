@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Dict, List, Union
 
 from pycompile.lex.token import *
+from pycompile.parser.syntax.factory import AbstractSyntaxNodeFactory
 
 
 class Table:
@@ -12,6 +13,7 @@ class Table:
     def __init__(self):
         self.terminals: List[Union[str, Token]] = []
         self.non_terminals: List[str] = []
+        self.semantic_actions: List[str] = []
         self.rules: Dict[str, Dict[str, List[str]]] = {}
         self.first_sets: Dict[str, List[str]] = {}
         self.follow_sets: Dict[str, List[str]] = {}
@@ -224,6 +226,9 @@ class Table:
                 elif lhs_tok == 'EPSILON':
                     continue
                     # use_empty = True
+                elif lhs_tok[0:5] in ['make-', 'push-']:
+                    if lhs_tok not in self.semantic_actions:
+                        self.semantic_actions.append(lhs_tok)
                 else:
                     raise RuntimeError('Something wrong')
 
@@ -273,11 +278,31 @@ class Table:
             using = self.type_lookup[using]
         else:
             using = terminal.lexeme
-        return self.parse_table[non_term][using]
+        return self.get_with_semantic_actions(non_term, self.parse_table[non_term][using])
 
+    def get_with_semantic_actions(self, rule, rhs):
+        possible = self.rules[rule].values()
+        match = None
+        for test in possible:
+            if (
+                (len(rhs) == 0 and test[0] == 'EPSILON') or
+                (len(rhs) > 0 and (
+                    (test[0] != 'make-var' and rhs[0] == test[0]) or
+                    (test[0] == 'make-var' and rhs[0] == test[1])
+                ))
+            ):
+                if len(rhs) == 0 and 'make-var' not in test:
+                    test = []
+                elif len(rhs) == 0 and 'make-var' in test:
+                    test = ['make-var']
+                match = test
+                break
+        if match is None:
+            raise RuntimeError('Uhoh')
+        return match
 
     def is_terminal(self, symbol: str) -> bool:
-        return symbol not in self.rules.keys()
+        return symbol not in self.rules.keys() and symbol not in self.semantic_actions
 
     def lookup(self, non_term: str, term: str) -> Union[List[Union[str, Token]], str]:
         return self.parse_table[non_term][term]
@@ -320,5 +345,13 @@ class Table:
         else:
             return self.follow_sets[symbol]
 
+    def is_semantic_action(self, symbol) -> bool:
+        return symbol in self.semantic_actions
 
+    def validate_semantic_actions(self):
+        missing = [action for action in self.semantic_actions if action not in AbstractSyntaxNodeFactory.ACTION_MAP.keys()]
+        if len(missing) > 0:
+            print('The following semantic actions are missing implementations')
+            for missing_action in missing:
+                print(f'  \'{missing_action}\': \'\',')
 

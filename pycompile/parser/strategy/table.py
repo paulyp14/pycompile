@@ -5,6 +5,7 @@ from pycompile.utils.stack import Stack
 from pycompile.parser.strategy.helper import Table
 from pycompile.parser.strategy.strategy import ParsingStrategy
 from pycompile.parser.syntax.error import SyntaxParsingError
+from pycompile.parser.syntax.factory import AbstractSyntaxNodeFactory
 
 
 class TableParser(ParsingStrategy):
@@ -13,13 +14,14 @@ class TableParser(ParsingStrategy):
         super().__init__(code)
         self.table: Table = table
         self.symbol_stack: Stack = Stack()
+        self.semantic_stack: Stack = Stack()
         self.encountered_error: bool = False
 
     def _parse(self):
         self.push(Final())
         self.push('START')
         cur_tok = self.next_token()
-        while not isinstance(self.symbol_stack.peek(), Final):
+        while not isinstance(self.symbol_stack.peek(), Final) and not isinstance(cur_tok, Final):
             cur_sym = self.symbol_stack.peek()
             if self.is_terminal(cur_sym):
                 # terminal symbol
@@ -29,6 +31,8 @@ class TableParser(ParsingStrategy):
                     cur_tok = self.next_token()
                 else:
                     cur_tok = self.__found_error(cur_tok)
+            elif self.is_semantic_action(cur_sym):
+                self.process_semantic_action(cur_sym, cur_tok)
             else:
                 # non-terminal
                 if self.non_terminal_match(cur_sym, cur_tok):
@@ -36,6 +40,8 @@ class TableParser(ParsingStrategy):
                     self.inverse_push(cur_tok, cur_sym)
                 else:
                     cur_tok = self.__found_error(cur_tok)
+        if len(self.semantic_stack) > 0:
+            self.ast = self.semantic_stack.pop()
         # all symbols
         if not isinstance(cur_tok, Final) or self.encountered_error:
             self.success = False
@@ -109,3 +115,18 @@ class TableParser(ParsingStrategy):
                 # scan
                 token = self.next_token()
         return token
+
+    def is_semantic_action(self, cur_sym: Union[str, Token]) -> bool:
+        return self.table.is_semantic_action(cur_sym)
+
+    def process_semantic_action(self, cur_sym: str, token: Token):
+        self.pop()
+        # self.semantic_stack.push(cur_sym)
+        # return
+        node = AbstractSyntaxNodeFactory.create(
+            cur_sym,
+            token,
+            self.analyzer.tokens[self.current_token_idx - 1],
+            self.semantic_stack
+        )
+        self.semantic_stack.push(node)

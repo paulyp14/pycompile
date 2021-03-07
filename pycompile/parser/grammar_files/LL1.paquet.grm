@@ -1,169 +1,169 @@
-<AParams> ::= <Expr> <AParamsTail> 
+<AParams> ::= <Expr> make-expr <AParamsTail>
 <AParams> ::= EPSILON 
 
-<AParamsTail> ::= ',' <Expr> <AParamsTail> 
+<AParamsTail> ::= ',' <Expr> make-expr <AParamsTail> 
 <AParamsTail> ::= EPSILON 
 
-<AddOp> ::= '+' 
-<AddOp> ::= '-' 
-<AddOp> ::= 'or' 
+<AddOp> ::= '+'
+<AddOp> ::= '-'
+<AddOp> ::= 'or'
 
-<ArithExpr> ::= <Term> <ArithExprTail> 
+<ArithExpr> ::= <Term> make-term <ArithExprTail>
 
-<ArithExprTail> ::= <AddOp> <Term> <ArithExprTail> 
+<ArithExprTail> ::= <AddOp> push-op <Term> make-term make-operator <ArithExprTail>
 <ArithExprTail> ::= EPSILON 
 
-<ArraySizeRept> ::= '[' <IntNum> ']' <ArraySizeRept> 
+<ArraySizeRept> ::= '[' <IntNum> make-leaf ']' <ArraySizeRept>
 <ArraySizeRept> ::= EPSILON 
 
-<AssignOp> ::= 'assign' 
+<AssignOp> ::= 'assign'
 
-<AssignStatTail> ::= <AssignOp> <Expr> 
+<AssignStatTail> ::= <AssignOp> push-op <Expr> make-expr make-operator
 
-<ClassDecl> ::= 'class' 'id' <Inherit> '{' <ClassDeclBody> '}' ';' <ClassDecl> 
+<ClassDecl> ::= 'class' 'id' make-leaf <Inherit> '{' <ClassDeclBody> make-membList '}' ';' make-classDecl <ClassDecl>
 <ClassDecl> ::= EPSILON 
 
-<ClassDeclBody> ::= <Visibility> <MemberDecl> <ClassDeclBody> 
+<ClassDeclBody> ::= <Visibility> <MemberDecl> <ClassDeclBody>
 <ClassDeclBody> ::= EPSILON 
 
-<ClassMethod> ::= 'sr' 'id' 
+<ClassMethod> ::= 'sr' make-sr 'id' make-leaf
 <ClassMethod> ::= EPSILON 
 
-<Expr> ::= <ArithExpr> <ExprTail> 
+<Expr> ::= <ArithExpr> make-arithExp <ExprTail> 
 
-<ExprTail> ::= <RelOp> <ArithExpr> 
+<ExprTail> ::= <RelOp> push-op <ArithExpr> make-arithExp make-operator
 <ExprTail> ::= EPSILON 
 
-<FParams> ::= <Type> 'id' <ArraySizeRept> <FParamsTail> 
+<FParams> ::= <Type> 'id' make-leaf make-arSep <ArraySizeRept> make-aRList make-fParam <FParamsTail>
 <FParams> ::= EPSILON 
 
-<FParamsTail> ::= ',' <Type> 'id' <ArraySizeRept> <FParamsTail> 
+<FParamsTail> ::= ',' <Type> 'id' make-leaf make-arSep <ArraySizeRept> make-aRList make-fParam <FParamsTail>
 <FParamsTail> ::= EPSILON 
 
 <Factor> ::= <FuncOrVar> 
-<Factor> ::= 'intnum' 
-<Factor> ::= 'floatnum' 
-<Factor> ::= 'stringlit' 
-<Factor> ::= '(' <Expr> ')' 
-<Factor> ::= 'not' <Factor> 
-<Factor> ::= <Sign> <Factor> 
-<Factor> ::= 'qm' '[' <Expr> ':' <Expr> ':' <Expr> ']' 
+<Factor> ::= 'intnum' make-leaf 
+<Factor> ::= 'floatnum' make-leaf 
+<Factor> ::= 'stringlit' make-leaf 
+<Factor> ::= '(' <Expr> make-expr ')'
+<Factor> ::= 'not' make-leaf <Factor> make-factor make-negation
+<Factor> ::= <Sign> <Factor> make-factor make-signed
+<Factor> ::= 'qm' push-unary '[' <Expr> make-expr ':' <Expr> make-expr ':' <Expr> make-expr ']'
 
-<FuncBody> ::= '{' <MethodBodyVar> <StatementList> '}' 
+<FuncBody> ::= '{' <MethodBodyVar> <StatementList> make-statList make-funcBody '}'
 
-<FuncDecl> ::= 'func' 'id' '(' <FParams> ')' ':' <FuncDeclTail> ';' 
+<FuncDecl> ::= 'func' 'id' make-leaf '(' <FParams> make-fPList ')' ':' <FuncDeclTail> ';' make-funcDecl
 
 <FuncDeclTail> ::= <Type> 
-<FuncDeclTail> ::= 'void' 
+<FuncDeclTail> ::= 'void' make-leaf
 
 <FuncDef> ::= <Function> <FuncDef> 
 <FuncDef> ::= EPSILON 
 
-<FuncHead> ::= 'func' 'id' <ClassMethod> '(' <FParams> ')' ':' <FuncDeclTail> 
+<FuncHead> ::= 'func' 'id' make-leaf <ClassMethod> '(' <FParams> make-fPList ')' ':' <FuncDeclTail> make-funcDecl
 
-<FuncOrAssignStat> ::= 'id' <FuncOrAssignStatIdnest> 
+<FuncOrAssignStat> ::= 'id' make-leaf <FuncOrAssignStatIdnest>
 
-<FuncOrAssignStatIdnest> ::= <IndiceRep> <FuncOrAssignStatIdnestVarTail> 
-<FuncOrAssignStatIdnest> ::= '(' <AParams> ')' <FuncOrAssignStatIdnestFuncTail> 
+<FuncOrAssignStatIdnest> ::= <IndiceRep> make-indList <FuncOrAssignStatIdnestVarTail> 
+<FuncOrAssignStatIdnest> ::= '(' make-arSep <AParams> make-aPList ')' <FuncOrAssignStatIdnestFuncTail>
 
-<FuncOrAssignStatIdnestFuncTail> ::= '.' 'id' <FuncStatTail> 
-<FuncOrAssignStatIdnestFuncTail> ::= EPSILON
+<FuncOrAssignStatIdnestFuncTail> ::= '.' 'id' make-leaf <FuncStatTail> 
+<FuncOrAssignStatIdnestFuncTail> ::= EPSILON make-var
 
-<FuncStatTail> ::= <IndiceRep> <FuncStatTailIdnest>
-<FuncStatTail> ::= '(' <AParams> ')' <FuncStatTailIdnest>
+<FuncStatTail> ::= <IndiceRep> make-indList <FuncStatTailIdnest>
+<FuncStatTail> ::= '(' make-arSep <AParams> make-aPList ')' <FuncStatTailIdnest>
 
-<FuncStatTailIdnest> ::= '.' 'id' <FuncStatTail>
-<FuncStatTailIdnest> ::= EPSILON
+<FuncStatTailIdnest> ::= '.' 'id' make-leaf <FuncStatTail>
+<FuncStatTailIdnest> ::= EPSILON make-var
 
-<FuncOrAssignStatIdnestVarTail> ::= '.' 'id' <FuncOrAssignStatIdnest> 
-<FuncOrAssignStatIdnestVarTail> ::= <AssignStatTail> 
+<FuncOrAssignStatIdnestVarTail> ::= '.' 'id' make-leaf <FuncOrAssignStatIdnest> 
+<FuncOrAssignStatIdnestVarTail> ::= make-var <AssignStatTail>
 
-<FuncOrVar> ::= 'id' <FuncOrVarIdnest> 
+<FuncOrVar> ::= 'id' make-leaf <FuncOrVarIdnest> 
 
-<FuncOrVarIdnest> ::= <IndiceRep> <FuncOrVarIdnestTail> 
-<FuncOrVarIdnest> ::= '(' <AParams> ')' <FuncOrVarIdnestTail> 
+<FuncOrVarIdnest> ::= <IndiceRep> make-indList <FuncOrVarIdnestTail> 
+<FuncOrVarIdnest> ::= '(' make-arSep <AParams> make-aPList ')' <FuncOrVarIdnestTail>
 
-<FuncOrVarIdnestTail> ::= '.' 'id' <FuncOrVarIdnest> 
-<FuncOrVarIdnestTail> ::= EPSILON 
+<FuncOrVarIdnestTail> ::= '.' 'id' make-leaf <FuncOrVarIdnest> 
+<FuncOrVarIdnestTail> ::= EPSILON make-var
 
-<Function> ::= <FuncHead> <FuncBody> 
+<Function> ::= <FuncHead> <FuncBody> make-funcDef
 
-<IndiceRep> ::= '[' <Expr> ']' <IndiceRep> 
+<IndiceRep> ::= '[' make-arSep <Expr> make-expr ']' <IndiceRep>
 <IndiceRep> ::= EPSILON 
 
-<Inherit> ::= 'inherits' 'id' <NestedId> 
+<Inherit> ::= 'inherits' make-arSep 'id' make-leaf <NestedId> make-inherList
 <Inherit> ::= EPSILON 
 
-<IntNum> ::= 'intnum' 
+<IntNum> ::= 'intnum' make-leaf 
 <IntNum> ::= EPSILON 
 
-<MemberDecl> ::= <FuncDecl> 
-<MemberDecl> ::= <VarDecl> 
+<MemberDecl> ::= <FuncDecl>
+<MemberDecl> ::= <VarDecl> make-varDecl
 
-<MethodBodyVar> ::= 'var' '{' <VarDeclRep> '}' 
+<MethodBodyVar> ::= 'var' '{' <VarDeclRep> '}' make-varDList
 <MethodBodyVar> ::= EPSILON 
 
-<MultOp> ::= '*' 
-<MultOp> ::= '/' 
-<MultOp> ::= 'and' 
+<MultOp> ::= '*'
+<MultOp> ::= '/'
+<MultOp> ::= 'and'
 
-<NestedId> ::= ',' 'id' <NestedId> 
+<NestedId> ::= ',' 'id' make-leaf <NestedId>
 <NestedId> ::= EPSILON 
 
-<Prog> ::= <ClassDecl> <FuncDef> 'main' <FuncBody> 
+<Prog> ::= <ClassDecl> make-classList <FuncDef> make-funcDL 'main' <FuncBody>
 
-<RelOp> ::= 'eq' 
-<RelOp> ::= 'neq' 
-<RelOp> ::= 'lt' 
-<RelOp> ::= 'gt' 
-<RelOp> ::= 'leq' 
-<RelOp> ::= 'geq' 
+<RelOp> ::= 'eq'
+<RelOp> ::= 'neq'
+<RelOp> ::= 'lt'
+<RelOp> ::= 'gt'
+<RelOp> ::= 'leq'
+<RelOp> ::= 'geq'
 
-<START> ::= <Prog> 
+<START> ::= <Prog> make-Prog
 
-<Sign> ::= '+' 
-<Sign> ::= '-' 
+<Sign> ::= '+' make-leaf
+<Sign> ::= '-' make-leaf
 
-<StatBlock> ::= '{' <StatementList> '}' 
-<StatBlock> ::= <Statement> 
-<StatBlock> ::= EPSILON 
+<StatBlock> ::= '{' <StatementList> make-statList '}'
+<StatBlock> ::= <Statement> make-stat
+<StatBlock> ::= EPSILON
 
 <Statement> ::= <FuncOrAssignStat> ';' 
-<Statement> ::= 'if' '(' <Expr> ')' 'then' <StatBlock> 'else' <StatBlock> ';' 
-<Statement> ::= 'while' '(' <Expr> ')' <StatBlock> ';' 
-<Statement> ::= 'read' '(' <Variable> ')' ';' 
-<Statement> ::= 'write' '(' <Expr> ')' ';' 
-<Statement> ::= 'return' '(' <Expr> ')' ';' 
-<Statement> ::= 'break' ';' 
-<Statement> ::= 'continue' ';' 
+<Statement> ::= 'if' '(' <Expr> make-expr ')' 'then' <StatBlock> 'else' <StatBlock> ';' make-IF
+<Statement> ::= 'while' '(' <Expr> make-expr ')' <StatBlock> ';' make-WHILE
+<Statement> ::= 'read' '(' <Variable> ')' ';' make-READ
+<Statement> ::= 'write' '(' <Expr> make-expr ')' ';' make-WRITE
+<Statement> ::= 'return' '(' <Expr> make-expr ')' ';' make-RETURN
+<Statement> ::= 'break' ';' make-BREAK
+<Statement> ::= 'continue' ';' make-CONTINUE
 
-<StatementList> ::= <Statement> <StatementList> 
+<StatementList> ::= <Statement> make-stat <StatementList>
 <StatementList> ::= EPSILON 
 
-<Term> ::= <Factor> <TermTail> 
+<Term> ::= <Factor> make-factor <TermTail> 
 
-<TermTail> ::= <MultOp> <Factor> <TermTail> 
+<TermTail> ::= <MultOp> push-op <Factor> make-factor make-operator <TermTail>
 <TermTail> ::= EPSILON 
 
-<Type> ::= 'integer' 
-<Type> ::= 'float' 
-<Type> ::= 'string' 
-<Type> ::= 'id' 
+<Type> ::= 'integer' make-leaf
+<Type> ::= 'float' make-leaf
+<Type> ::= 'string' make-leaf
+<Type> ::= 'id' make-leaf 
 
-<VarDecl> ::= <Type> 'id' <ArraySizeRept> ';' 
+<VarDecl> ::= <Type> 'id' make-leaf make-arSep <ArraySizeRept> make-aRList ';'
 
-<VarDeclRep> ::= <VarDecl> <VarDeclRep> 
+<VarDeclRep> ::= <VarDecl> make-varDecl <VarDeclRep>
 <VarDeclRep> ::= EPSILON 
 
-<Variable> ::= 'id' <VariableIdnest> 
+<Variable> ::= 'id' make-leaf <VariableIdnest> make-var
 
-<VariableIdnest> ::= <IndiceRep> <VariableIdnestTail> 
+<VariableIdnest> ::= <IndiceRep> make-indList <VariableIdnestTail> 
 
-<VariableIdnestTail> ::= '.' 'id' <VariableIdnest> 
+<VariableIdnestTail> ::= '.' 'id' make-leaf <VariableIdnest> 
 <VariableIdnestTail> ::= EPSILON 
 
-<Visibility> ::= 'public' 
-<Visibility> ::= 'private' 
+<Visibility> ::= 'public' make-leaf make-vis
+<Visibility> ::= 'private' make-leaf make-vis
 <Visibility> ::= EPSILON 
 
 

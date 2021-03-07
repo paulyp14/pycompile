@@ -1,8 +1,9 @@
-from typing import List, Union
 from abc import ABC, abstractmethod
+from typing import List, Tuple, Union
 
 from pycompile.lex.token import Token
 from pycompile.lex.analyzer import LexicalAnalyzer
+from pycompile.parser.syntax.ast import AbstractSyntaxNode
 from pycompile.parser.syntax.error import SyntaxParsingError
 
 
@@ -17,11 +18,12 @@ class ParsingStrategy(ABC):
         self.success: bool = False
         self.rules: List[str] = []
         self.errors: List[SyntaxParsingError] = []
+        self.ast: Union[AbstractSyntaxNode, None] = None
 
     def reset(self, code: str):
         self.code = code
 
-    def parse(self, code: str = None):
+    def parse(self, code: str = None) -> Tuple[bool, AbstractSyntaxNode, List[str]]:
         if code is not None:
             self.reset(code)
         if self.code is None:
@@ -31,6 +33,7 @@ class ParsingStrategy(ABC):
         self.analyzer.add_final_token()
         self.analyzer.remove_comments()
         self._parse()
+        return self.success, self.ast, self.rules
 
     @abstractmethod
     def _parse(self):

@@ -1,0 +1,14 @@
+func A::foo() : void
+{
+  x = 1;
+};
+
+func A::bar() : integer
+{
+  return (1);
+};
+
+main
+{
+  return (0);
+}
