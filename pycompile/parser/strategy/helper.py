@@ -170,7 +170,6 @@ class Table:
                     terms.add(item)
         # add the map of non-terminals
         self.rule_translations['ucalgary'] = mapping
-        print('Here')
 
     def load_calgary_first_follow(self, file_name: Union[str, Path]):
         # use pandas to load table as df
@@ -288,7 +287,9 @@ class Table:
                 (len(rhs) == 0 and test[0] == 'EPSILON') or
                 (len(rhs) > 0 and (
                     (test[0] != 'make-var' and rhs[0] == test[0]) or
-                    (test[0] == 'make-var' and rhs[0] == test[1])
+                    (test[0] == 'make-var' and rhs[0] == test[1]) or
+                    (test[0] != 'make-arSep' and rhs[0] == test[0]) or
+                    (test[0] == 'make-arSep' and rhs[0] == test[1])
                 ))
             ):
                 if len(rhs) == 0 and 'make-var' not in test:

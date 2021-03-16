@@ -1,136 +1,64 @@
+import argparse
+from pathlib import Path
+from os.path import dirname, join as path_join, realpath
+
 from pycompile.parser.parser import Parser
 
 
-def main():
+def analyze_test_file(input_file: Path, output_dir: str):
+    print(f'   Parsing source file: {input_file}')
+    deriv_name = path_join(output_dir, f'{input_file.stem}.outderivation')
+    stack_name = path_join(output_dir, f'{input_file.stem}.outstack')
+    ast_name = path_join(output_dir, f'{input_file.stem}.outast')
+    err_name = path_join(output_dir, f'{input_file.stem}.outerrors')
 
     parser = Parser("Table")
 
-    code = """"""
+    with open(str(input_file), 'r') as f:
+        data = f.read()
 
-    parser.parse(code)
+    ast, stack_cont, errors, deriv = parser.run(data)
 
-    code = """"""
+    with open(deriv_name, 'w') as f:
+        for line in deriv:
+            f.write(f'{line}\n')
 
-    parser = Parser("Table", grammar_file="./parser/grammar_files/LL1.paquet.grm", optional=opt)
-    parser.parse(code)
+    with open(ast_name, 'w') as f:
+        for line in ast:
+            f.write(f'{line}\n')
 
-    code = """"""
+    with open(err_name, 'w') as f:
+        for line in errors:
+            f.write(f'{line}\n')
 
-    parser = Parser("Table", grammar_file="./parser/grammar_files/LL1.paquet.grm", optional=opt)
-    parser.parse(code)
+    with open(stack_name, 'w') as f:
+        for line in stack_cont:
+            f.write(f'{line}\n')
 
-    code = """
-// ====== Class declarations ====== //
-class POLYNOMIAL {
-	public func evaluate(float x) : float;
-};
 
-class LINEAR inherits POLYNOMIAL {
-	private float a;
-	private float b;
-	
-	public func build(float A, float B) : LINEAR;
-	public func evaluate(float x) : float;
-};
+def run_tests(test_dir: str, output_dir: str):
+    print('Testing Parser...')
+    print(f'Using dir: {test_dir}')
+    print(f'Outputting to: {output_dir}')
+    for test_file in Path(test_dir).iterdir():
+        # if test_file.suffix == '.src' and test_file.stem == 'indices_test':
+        # if test_file.suffix == '.src' and test_file.stem == 'bubblesort':
+        if test_file.suffix == '.src' and test_file.stem == 'class_func':
+        # if test_file.suffix == '.src':
+            analyze_test_file(test_file, output_dir)
 
-class QUADRATIC inherits POLYNOMIAL {
-	private float a;
-	private float b;
-	private float c;
-	
-	public func build(float A, float B, float C) : QUADRATIC;
-	public func evaluate(float x) : float;
-};
 
-class GHIBBERISH in alskjd al j asd a lkj {
-    aslkdj laksjd 
-    alskd 
-    asdm as ma da
-    alskd a 
-    asd mas 
-    a am  lm_l a_d_ lm _dma asl_d m
-};
-
-// ====== Function Definitions ====== //
-func POLYNOMIAL::evaluate(float x) : float
-{
-  return (0);
-}
-
-func LINEAR::evaluate(float x) : float 
-{
-  var
-  {
-    float result;
-  }
-  result = 0.0;
-  result = a * x + b;
-  return (result);
-}
-  
-func QUADRATIC::evaluate(float x) : float
-{
-  var    
-  {
-    float result;
-  }
-  //Using Horner's method
-  result = a;
-  result = result * x + b;
-  result = result * x + c;
-  return (result);
-}
-  
-func LINEAR::build(float A, float B) : LINEAR 
-{
-  var 
-  {
-    LINEAR new_function;
-  }
-  new_function.a = A;
-  new_function.b = B;
-  return (new_function);
-}
-  
-func QUADRATIC::build(float A, float B, float C) : QUADRATIC
-{
-  var
-  {
-    QUADRATIC new_function;
-  }
-  new_function.a = A;
-  new_function.b = B;
-  new_function.c = C;
-  return (new_function);
-}
-  
-
-// ====== main ====== //
-main
-{
-  var
-  {
-    linear f1;
-    quadratic f2;
-    integer counter;
-  }
-  f1 = f1.build(2, 3.5);
-  f2 = f2.build(-2.0, 1.0, 0.0);
-  counter = 1;
-	
-  while(counter <= 10)
-  {
-    write(counter);
-    write(f1.evaluate(counter));
-    write(f2.evaluate(counter));
-  };
-}"""
-
-    parser = Parser("Table", grammar_file="./parser/grammar_files/LL1.paquet.grm", optional=opt)
-    parser.parse(code)
-
-    print('Finished')
+def main(test_dir: str = None, output_dir: str = None):
+    if test_dir is None:
+        test_dir = path_join(dirname(realpath(__file__)), 'parser', 'tests', 'in')
+    if output_dir is None:
+        output_dir = path_join(dirname(realpath(__file__)), 'parser', 'tests', 'out')
+    run_tests(test_dir, output_dir)
 
 
 if __name__ == '__main__':
-    main()
+    ap = argparse.ArgumentParser()
+    ap.add_argument('--test_dir', '-td', help='Directory to look for .src files in', default=None)
+    ap.add_argument('--output_dir', '-od', help='Directory to place output files in', default=None)
+    args = ap.parse_args()
+    main(args.test_dir, args.output_dir)

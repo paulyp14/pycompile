@@ -39,6 +39,9 @@ class Stack:
     def empty(self):
         self.items = []
 
+    def is_empty(self) -> bool:
+        return len(self.items) == 0
+
     def contents(self) -> str:
         if len(self.items) == 0:
             return ''

@@ -13,7 +13,7 @@
 <ArithExprTail> ::= <AddOp> push-op <Term> make-term make-operator <ArithExprTail>
 <ArithExprTail> ::= EPSILON 
 
-<ArraySizeRept> ::= '[' <IntNum> make-leaf ']' <ArraySizeRept>
+<ArraySizeRept> ::= '[' <IntNum> ']' <ArraySizeRept>
 <ArraySizeRept> ::= EPSILON 
 
 <AssignOp> ::= 'assign'
@@ -47,7 +47,7 @@
 <Factor> ::= '(' <Expr> make-expr ')'
 <Factor> ::= 'not' make-leaf <Factor> make-factor make-negation
 <Factor> ::= <Sign> <Factor> make-factor make-signed
-<Factor> ::= 'qm' push-unary '[' <Expr> make-expr ':' <Expr> make-expr ':' <Expr> make-expr ']'
+<Factor> ::= 'qm' '[' <Expr> make-expr ':' <Expr> make-expr ':' <Expr> make-expr ']' make-tern
 
 <FuncBody> ::= '{' <MethodBodyVar> <StatementList> make-statList make-funcBody '}'
 
@@ -63,13 +63,13 @@
 
 <FuncOrAssignStat> ::= 'id' make-leaf <FuncOrAssignStatIdnest>
 
-<FuncOrAssignStatIdnest> ::= <IndiceRep> make-indList <FuncOrAssignStatIdnestVarTail> 
+<FuncOrAssignStatIdnest> ::= make-arSep <IndiceRep> make-indList <FuncOrAssignStatIdnestVarTail>
 <FuncOrAssignStatIdnest> ::= '(' make-arSep <AParams> make-aPList ')' <FuncOrAssignStatIdnestFuncTail>
 
 <FuncOrAssignStatIdnestFuncTail> ::= '.' 'id' make-leaf <FuncStatTail> 
 <FuncOrAssignStatIdnestFuncTail> ::= EPSILON make-var
 
-<FuncStatTail> ::= <IndiceRep> make-indList <FuncStatTailIdnest>
+<FuncStatTail> ::= make-arSep <IndiceRep> make-indList <FuncStatTailIdnest>
 <FuncStatTail> ::= '(' make-arSep <AParams> make-aPList ')' <FuncStatTailIdnest>
 
 <FuncStatTailIdnest> ::= '.' 'id' make-leaf <FuncStatTail>
@@ -80,7 +80,7 @@
 
 <FuncOrVar> ::= 'id' make-leaf <FuncOrVarIdnest> 
 
-<FuncOrVarIdnest> ::= <IndiceRep> make-indList <FuncOrVarIdnestTail> 
+<FuncOrVarIdnest> ::= make-arSep <IndiceRep> make-indList <FuncOrVarIdnestTail>
 <FuncOrVarIdnest> ::= '(' make-arSep <AParams> make-aPList ')' <FuncOrVarIdnestTail>
 
 <FuncOrVarIdnestTail> ::= '.' 'id' make-leaf <FuncOrVarIdnest> 
@@ -88,7 +88,7 @@
 
 <Function> ::= <FuncHead> <FuncBody> make-funcDef
 
-<IndiceRep> ::= '[' make-arSep <Expr> make-expr ']' <IndiceRep>
+<IndiceRep> ::= '[' <Expr> make-expr ']' <IndiceRep>
 <IndiceRep> ::= EPSILON 
 
 <Inherit> ::= 'inherits' make-arSep 'id' make-leaf <NestedId> make-inherList
@@ -157,7 +157,7 @@
 
 <Variable> ::= 'id' make-leaf <VariableIdnest> make-var
 
-<VariableIdnest> ::= <IndiceRep> make-indList <VariableIdnestTail> 
+<VariableIdnest> ::= make-arSep <IndiceRep> make-indList <VariableIdnestTail>
 
 <VariableIdnestTail> ::= '.' 'id' make-leaf <VariableIdnest> 
 <VariableIdnestTail> ::= EPSILON 

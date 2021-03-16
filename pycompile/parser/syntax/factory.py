@@ -48,6 +48,7 @@ class AbstractSyntaxNodeFactory:
         'make-funcDef': lambda **kwargs: AbstractSyntaxNodeFactory.create_func(**kwargs),
         'make-vis': lambda **kwargs: AbstractSyntaxNodeFactory.add_vis(**kwargs),
         'make-sr': lambda **kwargs: AbstractSyntaxNodeFactory.add_sr(**kwargs),
+        'make-tern': lambda **kwargs: AbstractSyntaxNodeFactory.make_tern(**kwargs),
     }
 
     @staticmethod
@@ -176,8 +177,14 @@ class AbstractSyntaxNodeFactory:
     def create_prog(**kwargs):
         stack: Stack = kwargs.get('semantic_stack')
         kwargs['main']: AbstractSyntaxNode = stack.pop()
-        kwargs['funcs']: AbstractSyntaxNode = stack.pop()
-        kwargs['classes']: AbstractSyntaxNode = stack.pop()
+        if not stack.is_empty():
+            kwargs['funcs']: AbstractSyntaxNode = stack.pop()
+        else:
+            kwargs['funcs'] = None
+        if not stack.is_empty():
+            kwargs['classes']: AbstractSyntaxNode = stack.pop()
+        else:
+            kwargs['classes'] = None
         return ProgramNode(**kwargs)
 
     @staticmethod
@@ -310,3 +317,11 @@ class AbstractSyntaxNodeFactory:
         kwargs['body'] = stack.pop()
         kwargs['head'] = stack.pop()
         return FuncDef(**kwargs)
+
+    @staticmethod
+    def make_tern(**kwargs):
+        stack: Stack = kwargs.get('semantic_stack')
+        kwargs['false'] = stack.pop()
+        kwargs['true'] = stack.pop()
+        kwargs['condition'] = stack.pop()
+        return Ternary(**kwargs)

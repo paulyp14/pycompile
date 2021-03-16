@@ -17,13 +17,14 @@ class ParsingStrategy(ABC):
         self.lookahead: Union[Token, None] = None
         self.success: bool = False
         self.rules: List[str] = []
+        self.derivation: List[str] = []
         self.errors: List[SyntaxParsingError] = []
         self.ast: Union[AbstractSyntaxNode, None] = None
 
     def reset(self, code: str):
         self.code = code
 
-    def parse(self, code: str = None) -> Tuple[bool, AbstractSyntaxNode, List[str]]:
+    def parse(self, code: str = None) -> Tuple[bool, AbstractSyntaxNode, List[str], List[str]]:
         if code is not None:
             self.reset(code)
         if self.code is None:
@@ -33,7 +34,7 @@ class ParsingStrategy(ABC):
         self.analyzer.add_final_token()
         self.analyzer.remove_comments()
         self._parse()
-        return self.success, self.ast, self.rules
+        return self.success, self.ast, self.rules, self.derivation
 
     @abstractmethod
     def _parse(self):
@@ -44,8 +45,6 @@ class ParsingStrategy(ABC):
         self.current_token = self.analyzer.tokens[self.current_token_idx]
         if self.current_token_idx + 1 != len(self.analyzer):
             self.lookahead = self.analyzer.tokens[self.current_token_idx + 1]
-        if self.lookahead.lexeme == '>':
-            print('Here')
 
     def next_token(self) -> Token:
         return self.analyzer.tokens[self.current_token_idx + 1]

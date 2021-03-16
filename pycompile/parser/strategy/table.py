@@ -20,14 +20,16 @@ class TableParser(ParsingStrategy):
     def _parse(self):
         self.push(Final())
         self.push('START')
+        self.derivation = ['START']
         cur_tok = self.next_token()
-        while not isinstance(self.symbol_stack.peek(), Final) and not isinstance(cur_tok, Final):
+        while not isinstance(self.symbol_stack.peek(), Final):
             cur_sym = self.symbol_stack.peek()
             if self.is_terminal(cur_sym):
                 # terminal symbol
                 if self.terminal_match(cur_sym, cur_tok):
                     # we have a match
-                    self.pop()
+                    old_tok = self.pop()
+                    self.write_to_deriv(f' {self.semantic_stack.get_repr(old_tok)}', cur_sym)
                     cur_tok = self.next_token()
                 else:
                     cur_tok = self.__found_error(cur_tok)
@@ -37,6 +39,7 @@ class TableParser(ParsingStrategy):
                 # non-terminal
                 if self.non_terminal_match(cur_sym, cur_tok):
                     self.pop()
+
                     self.inverse_push(cur_tok, cur_sym)
                 else:
                     cur_tok = self.__found_error(cur_tok)
@@ -47,6 +50,11 @@ class TableParser(ParsingStrategy):
             self.success = False
         else:
             self.success = True
+
+    def write_to_deriv(self, item: str, cur_sym: str):
+        sym = self.semantic_stack.get_repr(cur_sym)
+        self.derivation.append(self.derivation[-1])
+        self.derivation[-1] = self.derivation[-1].replace(sym, item, 1).strip().replace('\\s+', '')
 
     def push(self, item: Union[Token, str]):
         self.symbol_stack.push(item)
@@ -63,8 +71,16 @@ class TableParser(ParsingStrategy):
             self.encountered_error = True
         return token
 
+    def write_inverted_tokens(self, symbol: str, tokens):
+        tokens = [
+            self.semantic_stack.get_repr(tok) for tok in tokens
+            if not self.is_semantic_action(tok)
+        ]
+        self.write_to_deriv(' '.join(tokens), symbol)
+
     def inverse_push(self, token: Token, symbol: str):
         tokens = self.table.get(symbol, token)
+        self.write_inverted_tokens(symbol, tokens)
         for i, token in enumerate(tokens[-1::-1]):
             if i + 1 == len(tokens):
                 self.push(token)
@@ -77,6 +93,8 @@ class TableParser(ParsingStrategy):
     def non_terminal_match(self, cur_sym: str, cur_tok: Token) -> bool:
         if isinstance(cur_tok, (Float, Integer, String, Id)):
             using = type(cur_tok)
+        elif isinstance(cur_tok, Final):
+            return False
         else:
             using = cur_tok.lexeme
         return self.table.lookup(cur_sym, using) != 'Error'

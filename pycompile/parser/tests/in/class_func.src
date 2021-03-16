@@ -1,0 +1,32 @@
+class Container {
+	private float a;
+	private float b;
+};
+
+class ActionContainer inherits Container {};
+
+class Actor {
+
+    public func one(float X) : void ;
+    public func two(float Y, float Z, Container W) : Container ;
+    public func three() : void ;
+    func four() : String ;
+};
+
+class Inheritor inherits InheritOne, ActionContainer, Actor {
+
+    public func array_ify() : Integer[] ;
+    public func dim1(Integer A[]) : void ;
+    public func dim2(Integer B[][]) : void ;
+    public func dim3(Integer C[2][3]) : void ;
+    public func dim4(Integer D[5]) : void ;
+};
+
+main {
+    var {
+        Container c;
+    }
+
+    c.a.g.f[k[6 + 7]] = 12;
+    tern = ? [ 9 + 1 : c.one() : c.two() ];
+}

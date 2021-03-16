@@ -9,7 +9,7 @@ class LINEAR inherits POLYNOMIAL {
 	
 	public func build(float A, float B) : LINEAR;
 	public func evaluate(float x) : float;
-}
+};
 
 class QUADRATIC inherits POLYNOMIAL {
 	private float a;
@@ -18,15 +18,15 @@ class QUADRATIC inherits POLYNOMIAL {
 	
 	public func build(float A, float B, float C) : QUADRATIC;
 	public func evaluate(float x) : float;
-}
+};
 
 // ====== Function Definitions ====== //
-POLYNOMIAL::evaluate(float x) : float
+func POLYNOMIAL::evaluate(float x) : float
 {
   return (0);
 }
 
-LINEAR::evaluate(float x) : float 
+func LINEAR::evaluate(float x) : float
 {
   var
   {
@@ -37,7 +37,7 @@ LINEAR::evaluate(float x) : float
   return (result);
 }
   
-QUADRATIC::evaluate(float x) : float
+func QUADRATIC::evaluate(float x) : float
 {
   var    
   {
@@ -50,7 +50,7 @@ QUADRATIC::evaluate(float x) : float
   return (result);
 }
   
-LINEAR::build(float A, float B) : LINEAR 
+func LINEAR::build(float A, float B) : LINEAR
 {
   var 
   {
@@ -61,7 +61,7 @@ LINEAR::build(float A, float B) : LINEAR
   return (new_function);
 }
   
-QUADRATIC::build(float A, float B, float C) : QUADRATIC
+func QUADRATIC::build(float A, float B, float C) : QUADRATIC
 {
   var
   {

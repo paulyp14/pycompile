@@ -14,6 +14,7 @@ class SyntaxParsingError(Exception):
 
     def __init__(self, token: Token, first_set: List, follow_set: List):
         super().__init__(self.create_message(token, first_set, follow_set))
+        self.message = self.create_message(token, first_set, follow_set)
 
     @staticmethod
     def create_message(token: Token, first_set: List, follow_set: List):

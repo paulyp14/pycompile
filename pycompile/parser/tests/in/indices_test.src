@@ -1,0 +1,21 @@
+main {
+  var {
+    integer i;
+    integer j;
+    integer k;
+    integer l;
+    integer m;
+    integer n;
+  }
+
+  i(j).k;
+  i(j).k();
+  i.j[k] = 5;
+  i[j].k = 6;
+  i[j].k[l] = 7;
+  i.j[k][l] = 8;
+  i[j][k].l = 9;
+  i[j][k].l[m][n] = 10;
+  i(j).k[l];
+  i(j).k[l][m];
+}
