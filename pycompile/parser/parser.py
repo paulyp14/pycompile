@@ -1,3 +1,4 @@
+import graphviz
 from pathlib import Path
 from typing import List, Tuple, Union
 
@@ -22,6 +23,7 @@ class Parser:
         self.ast: Union[AbstractSyntaxNode, None] = None
         self.derivation: List[str] = None
         self.stack_contents: List[str] = None
+        self.gv_ast: graphviz.Digraph = None
 
         parent = Path(__file__).parent
         self.default_config = {
@@ -48,6 +50,7 @@ class Parser:
         # collect printable ast
         collector = Collector()
         collector.collect(self.ast)
+        self.gv_ast = collector.grph
         errors = [e.message for e in self.parser.errors]
         return collector.create_array_repr(), self.stack_contents, errors, self.derivation
 

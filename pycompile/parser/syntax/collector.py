@@ -1,3 +1,4 @@
+import graphviz
 from copy import deepcopy
 from collections import OrderedDict
 
@@ -18,6 +19,9 @@ class Collector:
             'nodes': [],
             'largest': 0,
         }
+
+        self.grph: graphviz.Digraph = graphviz.Digraph()
+        self.node_names = {}
 
     def collect(self, head_node: AbstractSyntaxNode):
         head_node.collect(self, 0)

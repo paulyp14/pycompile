@@ -90,15 +90,28 @@ class AbstractSyntaxNode:
     def __str__(self):
         return '\n'.join(self.as_array())
 
-    def collect(self, collector, level):
+    def collect(self, collector, level, parent_name=None):
+        # do graph viz stuff
+        viz_name = self.__class__.__name__
+        if viz_name not in collector.node_names.keys():
+            collector.node_names[viz_name] = 0
+        node_name = f'{viz_name}{collector.node_names[viz_name] + 1}'
+        collector.node_names[viz_name] += 1
+        if 'token' in self.__dict__.keys() and self.token is not None:
+            collector.grph.node(node_name, self.token.lexeme)
+        else:
+            collector.grph.node(node_name)
+        if parent_name is not None:
+            collector.grph.edge(parent_name, node_name)
+        # do manual viz stuff
         collector.add(self, level)
         for child in self.CHILDREN:
             child_prop = self.__dict__[child]
             if isinstance(child_prop, AbstractSyntaxNode):
-                child_prop.collect(collector, level + 1)
+                child_prop.collect(collector, level + 1, node_name)
             elif isinstance(child_prop, list) and len(child_prop) > 0:
                 for small_child in child_prop:
-                    small_child.collect(collector, level + 1)
+                    small_child.collect(collector, level + 1, node_name)
 
     def __eq__(self, node: AbstractSyntaxNode):
         return isinstance(node, AbstractSyntaxNode) and self.unique_id == node.unique_id

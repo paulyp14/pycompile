@@ -20,7 +20,7 @@ class TableParser(ParsingStrategy):
     def _parse(self):
         self.push(Final())
         self.push('START')
-        self.derivation = ['START']
+        self.derivation = [' % START']
         cur_tok = self.next_token()
         while not isinstance(self.symbol_stack.peek(), Final):
             cur_sym = self.symbol_stack.peek()
@@ -29,7 +29,7 @@ class TableParser(ParsingStrategy):
                 if self.terminal_match(cur_sym, cur_tok):
                     # we have a match
                     old_tok = self.pop()
-                    self.write_to_deriv(f' {self.semantic_stack.get_repr(old_tok)}', cur_sym)
+                    self.write_to_deriv(f'{self.semantic_stack.get_repr(cur_tok)}', cur_sym, terminal=True)
                     cur_tok = self.next_token()
                 else:
                     cur_tok = self.__found_error(cur_tok)
@@ -45,16 +45,20 @@ class TableParser(ParsingStrategy):
                     cur_tok = self.__found_error(cur_tok)
         if len(self.semantic_stack) > 0:
             self.ast = self.semantic_stack.pop()
+        self.derivation[-1] = self.derivation[-1].replace(' % ', '')
         # all symbols
         if not isinstance(cur_tok, Final) or self.encountered_error:
             self.success = False
         else:
             self.success = True
 
-    def write_to_deriv(self, item: str, cur_sym: str):
+    def write_to_deriv(self, item: str, cur_sym: str, terminal=False):
         sym = self.semantic_stack.get_repr(cur_sym)
         self.derivation.append(self.derivation[-1])
-        self.derivation[-1] = self.derivation[-1].replace(sym, item, 1).strip().replace('\\s+', '')
+        beg, end = self.derivation[-1].split(' % ')
+        first, second = (' % ', '') if not terminal else ('', ' % ')
+        self.derivation[-1] = beg + first + end.replace(sym, item + second, 1)
+        self.derivation[-2] = self.derivation[-2].replace(' % ', '')
 
     def push(self, item: Union[Token, str]):
         self.symbol_stack.push(item)

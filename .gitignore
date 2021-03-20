@@ -9,3 +9,5 @@ __pycache__
 *.outast
 *.outerrors
 *.outstack
+*.outast.gv.pdf
+*.outast.gv

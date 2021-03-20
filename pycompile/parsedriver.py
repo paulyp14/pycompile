@@ -11,6 +11,7 @@ def analyze_test_file(input_file: Path, output_dir: str):
     stack_name = path_join(output_dir, f'{input_file.stem}.outstack')
     ast_name = path_join(output_dir, f'{input_file.stem}.outast')
     err_name = path_join(output_dir, f'{input_file.stem}.outerrors')
+    ast_gv_name = path_join(output_dir, f'{input_file.stem}.outast.gv')
 
     parser = Parser("Table")
 
@@ -35,6 +36,8 @@ def analyze_test_file(input_file: Path, output_dir: str):
         for line in stack_cont:
             f.write(f'{line}\n')
 
+    parser.gv_ast.render(ast_gv_name)
+
 
 def run_tests(test_dir: str, output_dir: str):
     print('Testing Parser...')
@@ -43,8 +46,8 @@ def run_tests(test_dir: str, output_dir: str):
     for test_file in Path(test_dir).iterdir():
         # if test_file.suffix == '.src' and test_file.stem == 'indices_test':
         # if test_file.suffix == '.src' and test_file.stem == 'bubblesort':
-        if test_file.suffix == '.src' and test_file.stem == 'class_func':
-        # if test_file.suffix == '.src':
+        # if test_file.suffix == '.src' and test_file.stem == 'class_func':
+        if test_file.suffix == '.src':
             analyze_test_file(test_file, output_dir)
 
 
