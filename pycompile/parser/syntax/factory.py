@@ -10,6 +10,7 @@ class AbstractSyntaxNodeFactory:
     # create map between semantic actions and factory methods
     ACTION_MAP = {
         'make-leaf': lambda **kwargs: AbstractSyntaxNodeFactory.create_leaf(**kwargs),
+        'make-emptyLeaf': lambda **kwargs: AbstractSyntaxNodeFactory.create_empty_leaf(**kwargs),
         'make-operator': lambda **kwargs: AbstractSyntaxNodeFactory.create_operator(**kwargs),
         'push-op': lambda **kwargs: AbstractSyntaxNodeFactory.push_op(**kwargs),
         'make-term': lambda **kwargs: AbstractSyntaxNodeFactory.create_term(**kwargs),
@@ -67,6 +68,10 @@ class AbstractSyntaxNodeFactory:
     @staticmethod
     def create_leaf(**kwargs) -> AbstractSyntaxNode:
         return Leaf(token=kwargs.get('last_token'))
+
+    @staticmethod
+    def create_empty_leaf(**kwargs) -> AbstractSyntaxNode:
+        return Leaf(token=Placeholder('PLACEHOLDER'))
 
     @staticmethod
     def create_operator(**kwargs):

@@ -1,0 +1,179 @@
+// ====== Class declarations ====== //
+class POLYNOMIAL {
+	public func evaluate(float x) : float;
+	public func evaluate2(float x) : float;                       // 6.2
+};
+class POLYNOMIAL {                                                    // 8.1
+	public func evaluate(float x) : float;                        
+        public func evaluate(integer x) : integer;                    // 9.2
+};
+class LINEAR inherits POLYNOMIAL {
+	private float a;
+	private float b;
+	private integer b;                                            // 8.3
+	
+	public func build(float A, float B) : LINEAR;
+	public func evaluate(float x) : float;                        // 9.3
+};
+
+class QUADRATIC inherits POLYNOMIAL {
+	private float a;                                              // 8.5
+	private float b;                                              // 8.5
+	private float c;
+	
+	public func build(float A, float B, float C) : QUADRATIC;
+	public func evaluate(float x) : float;                        // 9.3
+};
+
+class C inherits E {
+	private integer a; 
+};
+
+class D inherits C {
+	private integer b; 
+};
+
+class E inherits D {                                                   // 14.1
+	private integer c; 
+};
+
+
+// ====== Function Definitions ====== //
+func POLYNOMIAL::evaluate(float x) : float
+{
+  return (0);
+}
+
+func LINEAR::evaluate(float x) : float 
+{
+  var
+  {
+    float result;
+  }
+  result = 0.0;
+  result = a * x + b;
+  return (result);
+}
+  
+func QUADRATIC::evaluate(float x) : float
+{
+  var    
+  {
+    float result;
+  }
+  //Using Horner's method
+  result = a;
+  result = result * x + b;
+  result = result * x + c;
+  return (result);
+}
+  
+func LINEAR::build(float A, float B) : LINEAR 
+{
+  var 
+  {
+    LINEAR new_function;
+  }
+  new_function.a = A;
+  new_function.b = B;
+  return (new_function);
+}
+  
+func QUADRATIC::build(float A, float B, float C) : QUADRATIC
+{
+  var
+  {
+    QUADRATIC new_function;
+  }
+  new_function.a = A + B * 3.1;                                     // 10.1
+  new_function.b = B;
+  new_function.c = "string";                                        // 10.2 
+  return (1);                                                       // 10.3
+}
+  
+func QUADRATIC::build2(float A, float B, float C) : QUADRATIC       // 6.1
+{
+  var
+  {
+    QUADRATIC new_function;
+  }
+  new_function.a = A;
+  new_function.b = B;
+  new_function.c = C;
+  return (new_function);
+}
+
+func f(integer i) : void {}                                                    
+func f(integer i) : void {}                                         // 8.2
+func f(integer i, integer i) : integer {}                           // 9.1
+
+func f3(integer p1[2][3]) : integer {}
+
+
+// ====== main ====== //
+main
+{
+  var
+  {
+    A a;                                                            // 11.5
+    C c;
+    linear f1;
+    quadratic f2;
+    integer counter;
+    float counter;                                                  // 8.4
+    integer i[2][3];
+    integer j[1][2][3];
+  }
+  f1 = f1.build(2, 3.5);
+  f2 = f2.build(-2.0, 1.0, 0.0);
+  c.b = 1;                                                          // 11.2
+  counter = c.f();                                                  // 11.3
+  undefined();                                                      // 11.4
+  counter = a;                                                      // 11.1
+  f(1,1,1);                                                         // 12.1
+  f(1.2,1);                                                         // 12.2	
+  i[2] = 1;                                                         // 13.1
+  i["hello"][1.3] = 2;                                              // 13.2
+  f3(j);                                                            // 13.3
+  counter.x = 1;                                                    // 15.1
+  while(counter <= 10)
+  {
+    write(counter);
+    write(f1.evaluate(counter));
+    write(f2.evaluate(counter));
+  };
+}
+
+/*
+1.   |X| global symbol table
+2.   |X| class symbol table
+3.1  |X| class data member
+3.2  |X| function's local variable
+4.1  |X| free function
+4.2  |X| member function
+6.1  |X| undeclared member function definition
+6.2  |X| undefined member function declaration
+8.1  |X| multiply declared class
+8.2  |X| multiply defined free function
+8.3  |X| multiply declared identifier in class
+8.4  |X| multiply declared identifier in function
+8.5  |X| shadowed inherited data member
+9.1  |X| Overloaded free function
+9.2  |X| Overloaded member function
+9.3  |X| Overridden inherited member function
+10.1 |X| Type error in expression
+10.2 |X| Type error in assignment statement 
+10.3 |X| Type error in return statement
+11.1 |X| Undeclared local variable
+11.2 |X| Undeclared data member
+11.3 |X| Undeclared member function
+11.4 |X| Undeclared free function
+11.5 |X| Undeclared class
+12.1 |X| Function call with wrong number of parameters
+12.2 |X| Function call with wrong type of parameters
+13.1 |X| Use of array with wrong number of dimensions
+13.2 |X| Array index is not an integer
+13.3 |X| Array parameter using wrong number of dimensions
+14.1 |X| Circular class dependency
+15.1 |X| "." operator used on non-class type
+*/

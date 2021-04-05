@@ -6,7 +6,7 @@ class POLYNOMIAL {
 class LINEAR inherits POLYNOMIAL {
 	private float a;
 	private float b;
-	
+
 	public func build(float A, float B) : LINEAR;
 	public func evaluate(float x) : float;
 };
@@ -15,7 +15,7 @@ class QUADRATIC inherits POLYNOMIAL {
 	private float a;
 	private float b;
 	private float c;
-	
+
 	public func build(float A, float B, float C) : QUADRATIC;
 	public func evaluate(float x) : float;
 };
@@ -36,10 +36,10 @@ func LINEAR::evaluate(float x) : float
   result = a * x + b;
   return (result);
 }
-  
+
 func QUADRATIC::evaluate(float x) : float
 {
-  var    
+  var
   {
     float result;
   }
@@ -49,10 +49,10 @@ func QUADRATIC::evaluate(float x) : float
   result = result * x + c;
   return (result);
 }
-  
+
 func LINEAR::build(float A, float B) : LINEAR
 {
-  var 
+  var
   {
     LINEAR new_function;
   }
@@ -60,7 +60,7 @@ func LINEAR::build(float A, float B) : LINEAR
   new_function.b = B;
   return (new_function);
 }
-  
+
 func QUADRATIC::build(float A, float B, float C) : QUADRATIC
 {
   var
@@ -72,21 +72,30 @@ func QUADRATIC::build(float A, float B, float C) : QUADRATIC
   new_function.c = C;
   return (new_function);
 }
-  
+
+func free_func() : void
+{
+    var
+    {
+        LINEAR a;
+    }
+}
+
 
 // ====== main ====== //
 main
 {
   var
   {
-    linear f1;
-    quadratic f2;
+    LINEAR f1;
+    QUADRATIC f2;
     integer counter;
   }
-  f1 = f1.build(2, 3.5);
+  f1 = f1.build(2.0, 3.5);
   f2 = f2.build(-2.0, 1.0, 0.0);
   counter = 1;
-	
+  free_func().poopoo() = 5;
+
   while(counter <= 10)
   {
     write(counter);
@@ -94,144 +103,37 @@ main
     write(f2.evaluate(counter));
   };
 }
+
 /*
-    classes
-    --------------------------------------
-| | no class declaration
-| | class declaration
-|X| multiple class declarations
-|X| no data member declaration
-|X| data member declaration
-|X| multiple data member declaration
-| | no member function declaration
-|X| member function declaration
-|X| multiple member function declaration
-| | no member
-|X| no inherited class
-|X| one inherited class
-| | multiple inherited classes
-|X| private member specifier
-|X| public member specifier
-| | absence of member specifier
-
-    functions: definitions
-    --------------------------------------
-| | no main function definition (not allowed)
-|X| main function definition
-| | multiple main function definitions (not allowed)
-|X| no free function definition
-| | free function definition
-| | multiple free function definitions
-| | no member function definition
-|X| member function definition
-|X| multiple member function definitions
-| | return type: void
-| | return type: integer
-|X| return type: float
-| | return type: string
-|X| return type: id
-| | return type: array (not allowed)
-
-
-    functions: formal parameters
-    --------------------------------------
-| | type: integer
-|X| type: float
-| | type: string
-| | type: id
-| | type: 1-dim array 
-| | type: n-dim array
-| | type: array (with size)
-| | type: array (without size)
-
-    functions: calls
-    --------------------------------------
-| | free function call
-|X| member function call
-| | parameters:0
-|X| parameters:1
-|X| parameters:n
-| | array parameter - 1-dim
-| | array parameter - n-dim
-| | array parameter - with size
-| | array parameter - without size
-| | function call as statement
-|X| function call as expression factor
-| | expression as parameter
-
-    variable declaration
-    --------------------------------------
-| | type: integer
-| | type: float
-| | type: string
-|X| type: id
-| | type: 1-dim array 
-| | type: n-dim array
-| | type: array (with size)
-| | type: array (without size)
-
-    function body: local variable declaration block
-    --------------------------------------
-| | no local variable declarations block
-|X| local variable declaration block
-| | multiple local variable declarations block (not allowed)
-| | no variables in block
-|X| 1 variable declared in block
-|X| multiple variables declared in block
-
-    function body: statements
-    --------------------------------------
-| | no statement
-| | 1 statement
-|X| n statements
-| | if statement
-| | if: empty then or else blocks
-| | if: 1-statement then or else blocks
-| | if: n-statements then or else blocks
-|X| while statement
-| | while: empty block
-| | while: 1-statement block
-|X| while: n-statement block
-| | read(<variable>) statement
-|X| write(<expr>) statement
-|X| return(<expr>) statement
-| | break statement
-| | continue statement
-|X| assignment statement
-
-    variable + idnest
-    --------------------------------------
-|X| id
-|X| id.id
-|X| id.id(id)
-| | id(id).id
-| | id(id).id()
-| | id.id[id]
-| | id[id].id
-| | id[id].id[id]
-| | id.id[id][id]
-| | id[id][id].id
-| | id[id][id].id[id][id]
-| | id(id).id[id]
-| | id(id).id[id][id]
-| | expression as array index
-
-    expressions
-    --------------------------------------
-| | single variable
-| | involving addop
-| | involving multop
-| | involving relop
-|X| involving addop + multop
-| | involving multop + relop
-| | involving addop + multop + relop
-| | involving parentheses
-| | involving nested parenhteses
-| | involving ternary operator
-| | involving not
-| | involving sign
-| | involving literals
-|X| involving variable + idnest
-|X| involving function calls
-| | involving all the above in one expression
+1.   |X| global symbol table
+2.   |X| class symbol table
+3.1  |X| class data member
+3.2  |X| function's local variable
+4.1  |X| free function
+4.2  |X| member function
+6.1  | | undeclared member function definition
+6.2  | | undefined member function declaration
+8.1  | | multiply declared class
+8.2  | | multiply declared free function
+8.3  | | multiply declared identifier in class
+8.4  | | multiply declared identifier in function
+8.5  | | shadowed inherited data member
+9.1  | | Overloaded free function
+9.2  | | Overloaded member function
+9.3  | | Overridden inherited member function
+10.1 | | Type error in expression
+10.2 | | Type error in assignment statement
+10.3 | | Type error in return statement
+11.1 | | Undeclared local variable
+11.2 | | Undeclared data member
+11.3 | | Undeclared member function
+11.4 | | Undeclared free function
+11.5 | | Undeclared class
+12.1 | | Function call with wrong number of parameters
+12.2 | | Function call with wrong type of parameters
+13.1 | | Use of array with wrong number of dimensions
+13.2 | | Array index is not an integer
+13.3 | | Array parameter using wrong number of dimensions
+14.1 | | Circular class dependency
+15.1 | | "." operator used on non-class type
 */

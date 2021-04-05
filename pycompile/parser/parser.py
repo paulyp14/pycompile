@@ -54,4 +54,13 @@ class Parser:
         errors = [e.message for e in self.parser.errors]
         return collector.create_array_repr(), self.stack_contents, errors, self.derivation
 
+    def traverse(self, visitor):
+        """
+
+        :param visitor :
+        :return:
+        """
+        self.ast.accept(visitor)
+        visitor.finish()
+
 

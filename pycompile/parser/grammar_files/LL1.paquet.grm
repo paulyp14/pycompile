@@ -95,7 +95,7 @@
 <Inherit> ::= EPSILON 
 
 <IntNum> ::= 'intnum' make-leaf 
-<IntNum> ::= EPSILON 
+<IntNum> ::= EPSILON make-emptyLeaf
 
 <MemberDecl> ::= <FuncDecl>
 <MemberDecl> ::= <VarDecl> make-varDecl

@@ -26,6 +26,9 @@ class AbstractSyntaxNode:
         self.siblings: List[AbstractSyntaxNode] = siblings
         self.right_sibling: AbstractSyntaxNode = right_sibling
         self.leftmost_sibling: AbstractSyntaxNode = leftmost_sibling
+        self.sem_rec = None
+        self.type_rec = None
+        self.sym_table = None
 
         for key, item in kwargs.items():
             if isinstance(item, AbstractSyntaxNode):
@@ -105,28 +108,34 @@ class AbstractSyntaxNode:
             collector.grph.edge(parent_name, node_name)
         # do manual viz stuff
         collector.add(self, level)
-        for child in self.CHILDREN:
-            child_prop = self.__dict__[child]
-            if isinstance(child_prop, AbstractSyntaxNode):
-                child_prop.collect(collector, level + 1, node_name)
-            elif isinstance(child_prop, list) and len(child_prop) > 0:
-                for small_child in child_prop:
-                    small_child.collect(collector, level + 1, node_name)
+        for child in self.get_children():
+            child.collect(collector, level + 1, node_name)
 
     def __eq__(self, node: AbstractSyntaxNode):
         return isinstance(node, AbstractSyntaxNode) and self.unique_id == node.unique_id
 
     def is_child(self, node: AbstractSyntaxNode):
+        for child in self.get_children():
+            if child == node:
+                return True
+        return False
+
+    def get_children(self) -> List[AbstractSyntaxNode]:
+        the_children = []
         for child in self.CHILDREN:
             child_prop = self.__dict__[child]
             if isinstance(child_prop, AbstractSyntaxNode):
-                if child_prop.__eq__(node):
-                    return True
+                the_children.append(child_prop)
             elif isinstance(child_prop, list) and len(child_prop) > 0:
                 for small_child in child_prop:
-                    if isinstance(small_child, AbstractSyntaxNode) and small_child.__eq__(node):
-                        return True
-        return False
+                    the_children.append(small_child)
+        return the_children
+
+    def accept(self, visitor):
+        visitor.pre_visit(self)
+        for child in self.get_children():
+            child.accept(visitor)
+        visitor.visit(self)
 
 
 class AbstractSyntaxTree:

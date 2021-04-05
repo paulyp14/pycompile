@@ -3,40 +3,30 @@ from pathlib import Path
 from os.path import dirname, join as path_join, realpath
 
 from pycompile.parser.parser import Parser
+from pycompile.symbol.visitor import SemanticTableBuilder, TypeChecker
 
 
 def analyze_test_file(input_file: Path, output_dir: str):
     print(f'   Parsing source file: {input_file}')
-    deriv_name = path_join(output_dir, f'{input_file.stem}.outderivation')
-    stack_name = path_join(output_dir, f'{input_file.stem}.outstack')
-    ast_name = path_join(output_dir, f'{input_file.stem}.outast')
-    err_name = path_join(output_dir, f'{input_file.stem}.outerrors')
-    ast_gv_name = path_join(output_dir, f'{input_file.stem}.outast.gv')
 
     parser = Parser("Table")
 
     with open(str(input_file), 'r') as f:
         data = f.read()
 
-    ast, stack_cont, errors, deriv = parser.run(data)
+    parser.parse(data)
+    # build symbol tables
+    stb = SemanticTableBuilder()
+    parser.traverse(stb)
+    # type check, use Symbol table that was already created and add to existing errors
+    tc = TypeChecker(stb.global_table, None)
+    parser.traverse(tc)
 
-    with open(deriv_name, 'w') as f:
-        for line in deriv:
-            f.write(f'{line}\n')
+    print('Finished \n\n')
 
-    with open(ast_name, 'w') as f:
-        for line in ast:
-            f.write(f'{line}\n')
-
-    with open(err_name, 'w') as f:
-        for line in errors:
-            f.write(f'{line}\n')
-
-    with open(stack_name, 'w') as f:
-        for line in stack_cont:
-            f.write(f'{line}\n')
-
-    parser.gv_ast.render(ast_gv_name)
+    arr_rep = stb.global_table.get_repr()
+    for row in arr_rep:
+        print(row)
 
 
 def run_tests(test_dir: str, output_dir: str):
@@ -45,7 +35,10 @@ def run_tests(test_dir: str, output_dir: str):
     print(f'Outputting to: {output_dir}')
     for test_file in Path(test_dir).iterdir():
         # if test_file.suffix == '.src' and test_file.stem == 'indices_test':
-        if test_file.suffix == '.src' and test_file.stem == 'polynomial':
+        # if test_file.suffix == '.src' and test_file.stem == 'polynomial':
+        # if test_file.suffix == '.src' and test_file.stem == 'inheritance_scoping':
+        if test_file.suffix == '.src' and test_file.stem == 'polynomial_semantic_errors':
+        # if test_file.suffix == '.src' and test_file.stem == 'bubblesort':
         # if test_file.suffix == '.src' and test_file.stem == 'class_func':
         # if test_file.suffix == '.src':
             analyze_test_file(test_file, output_dir)

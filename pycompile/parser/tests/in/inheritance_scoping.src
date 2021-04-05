@@ -1,0 +1,53 @@
+class Base {
+    private float a;
+    private float b;
+
+    private func float_func() : void;
+};
+
+class Mid inherits Base {
+    private float c;
+
+    private func float_func() : void;
+};
+
+class Start {
+    private func improved_float_func() : void;
+};
+
+class End inherits Mid, Start {
+    public func test() : void;
+};
+
+func Base::float_func() : void {
+
+}
+
+func Mid::float_func() : void {
+
+}
+
+func End::test() : void {
+    var {
+        Mid m;
+    }
+    m.c = a + b;
+    float_func();
+}
+
+func Start::improved_float_func() : void {
+
+}
+
+func free_func(float x, float y) : float {
+    var {
+        Mid freeMid;
+        Base freeBase;
+    }
+}
+
+main {
+    var {
+        Mid mainMid;
+    }
+}

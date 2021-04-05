@@ -292,10 +292,12 @@ class Table:
                     (test[0] == 'make-arSep' and rhs[0] == test[1])
                 ))
             ):
-                if len(rhs) == 0 and 'make-var' not in test:
+                if len(rhs) == 0 and 'make-var' not in test and 'make-emptyLeaf' not in test:
                     test = []
                 elif len(rhs) == 0 and 'make-var' in test:
                     test = ['make-var']
+                elif len(rhs) == 0 and 'make-emptyLeaf' in test:
+                    test = ['make-emptyLeaf']
                 match = test
                 break
         if match is None:
