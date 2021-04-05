@@ -5,7 +5,7 @@ class POLYNOMIAL {
 };
 class POLYNOMIAL {                                                    // 8.1
 	public func evaluate(float x) : float;                        
-        public func evaluate(integer x) : integer;                    // 9.2
+    public func evaluate(integer x) : integer;                    // 9.2
 };
 class LINEAR inherits POLYNOMIAL {
 	private float a;
@@ -85,7 +85,7 @@ func QUADRATIC::build(float A, float B, float C) : QUADRATIC
   {
     QUADRATIC new_function;
   }
-  new_function.a = A + B * 3.1;                                     // 10.1
+  new_function.a = A + B * "string";                                     // 10.1
   new_function.b = B;
   new_function.c = "string";                                        // 10.2 
   return (1);                                                       // 10.3

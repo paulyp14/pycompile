@@ -56,7 +56,7 @@ class TypeEnum(Enum):
 
     @staticmethod
     def is_class(name: str) -> bool:
-        return name not in ('integer', 'float', 'string', 'void')
+        return name not in ('integer', 'float', 'string', 'void', 'main')
 
 
 class Type:
@@ -127,6 +127,7 @@ class SemanticRecord:
         self.inheritances: Optional[List[str]] = inheritances
         self.visibility: Optional[Visibility] = visibility
         self.parent_tables: List = []
+        self.position: Optional[int] = None
 
         self.RECORD_LIST.append(self)
 
@@ -261,6 +262,7 @@ class TypeRecord:
         self.is_array: bool = is_array
         self.dimensions: int = dimensions
         self.value = value
+        self.position: Optional[int] = None
 
     def __str__(self):
         as_str = str(self.type)

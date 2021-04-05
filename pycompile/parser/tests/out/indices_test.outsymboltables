@@ -1,0 +1,15 @@
+================================
+| table: global                |
+================================
+| function    | main           |
+|    ========================  |
+|    | table: main          |  |
+|    ========================  |
+|    | local | i | integer  |  |
+|    | local | j | integer  |  |
+|    | local | k | integer  |  |
+|    | local | l | integer  |  |
+|    | local | m | integer  |  |
+|    | local | n | integer  |  |
+|    ========================  |
+================================

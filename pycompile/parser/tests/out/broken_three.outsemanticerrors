@@ -1,0 +1,4 @@
+Definition provided for undeclared member function: A::foo() (line: 1)
+Scope A can not be resolved (line: 1)
+Definition provided for undeclared member function: A::bar() (line: 6)
+Failed to type operator = because of semantic errors

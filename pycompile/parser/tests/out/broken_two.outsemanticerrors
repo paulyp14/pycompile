@@ -1,0 +1,2 @@
+FATAL: Can not resolve scope: A::foo()
+Failed to type operator = because of semantic errors

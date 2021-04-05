@@ -11,9 +11,17 @@ class SymbolTable:
         self.name = table_name
         self.records: Dict[str, SemanticRecord] = OrderedDict()
         self.matched = False
+        self.duplicated_generator: dict = {}
 
-    def add_record(self, record: SemanticRecord):
-        self.records[record.get_name()] = record
+    def generate_duplicated_param_name(self, record: SemanticRecord) -> str:
+        if record.get_name() not in self.duplicated_generator.keys():
+            self.duplicated_generator[record.get_name()] = 0
+        self.duplicated_generator[record.get_name()] += 1
+        return f'{record.name}{self.duplicated_generator[record.get_name()]}'
+
+    def add_record(self, record: SemanticRecord, duplicated_name_key: str = None):
+        name = record.get_name() if duplicated_name_key is None else duplicated_name_key
+        self.records[name] = record
 
     def add_inherited_variable(self, record: SemanticRecord):
         self.records[record.get_name()] = record
@@ -57,14 +65,31 @@ class SymbolTable:
         else:
             return record.get_func_decl()
 
-    def find_shadowed_vars(self, outer_table, warnings, for_classes: bool = False, global_table: SymbolTable = None):
+    def find_shadowed_vars(self, outer_table, warnings, for_classes: bool = False, global_table: SymbolTable = None, inherit_checks: dict = None):
         for record in self.records.values():
-            if record.name in outer_table.records.keys():
-                warnings.append(SemanticWarning(
-                    f'Name {record.name} in scope {self.name} shadows a name from an outer scope'
-                ))
+            pos_msg = f'(line: {record.position})'
+            decl = None
+            if record.name in outer_table.records.keys() and record.name not in self.duplicated_generator.keys():
+                if inherit_checks is None or not inherit_checks.get(self.name, {'done': False})['done']:
+                    warnings.append(SemanticWarning(
+                        f'Name {record.name} in scope {self.name} shadows a name from an outer scope {pos_msg}'
+                    ))
+            if record.kind == Kind.Function and self.name == record.member_of:
+                # check for function overrides!!
+                decl = record.get_func_decl()
+                if '::' in decl:
+                    decl = decl.split('::')[1]
+                if decl in outer_table.records.keys():
+                    func_name = record.get_name()
+                    override_name = outer_table.records[decl].get_name()
+                    override_msg = f'Overriding function {override_name} with function {func_name} {pos_msg}'
+                    if not any([w.args[0] == override_msg for w in warnings]):
+                        if inherit_checks is None or not inherit_checks[self.name]['done']:
+                            warnings.append(SemanticWarning(override_msg))
+
+            rec_name = record.name if decl is None else decl
             # add an entry
-            outer_table.records[record.name] = record
+            outer_table.records[rec_name] = record
         # add outer records here
         for record in outer_table.records.values():
             if (for_classes and record.kind in (Kind.Function, Kind.Variable)) and record.member_of is not None and record.member_of != self.name:
@@ -80,10 +105,22 @@ class SymbolTable:
             if record.table_link is not None:
                 new_outer = SymbolTable('outer')
                 for inner_rec in outer_table.records.values():
-                    if inner_rec.kind != Kind.Function or inner_rec.member_of is not None:
+                    # if inner_rec.kind != Kind.Function or inner_rec.member_of is not None:
+                    if inner_rec.kind != Kind.Function or inner_rec.member_of is None:
                         new_outer.add_record(inner_rec)
+                    else:
+                        new_outer.add_inherited_function(inner_rec)
                 for_classes = True if record.kind == Kind.InheritanceRelation else False
-                record.table_link.find_shadowed_vars(new_outer, warnings, for_classes=for_classes, global_table=global_table)
+                record.table_link.find_shadowed_vars(new_outer, warnings, for_classes=for_classes, global_table=global_table, inherit_checks=inherit_checks)
+                if for_classes and inherit_checks is not None and record.kind == Kind.InheritanceRelation:
+                    rec_name = record.table_link.name
+                    if not inherit_checks[rec_name]['done']:
+                        inherit_list = global_table.records.get(rec_name).inheritances if global_table.records.get(rec_name).inheritances is not None else []
+                        if len(inherit_list) == 0:
+                            print('\n   ******* WARNING: no inheritances list when checking inheritance.... *********\n')
+                        inherit_checks[rec_name]['list'].append(self.name)
+                        inherit_checks[rec_name]['done'] = all([inherit_name in inherit_checks[rec_name]['list'] for inherit_name in inherit_list])
+
 
     def match_func_call(self, name: str, params: List[TypeRecord]) -> Union[SemanticRecord, None]:
         match = None

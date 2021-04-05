@@ -1,0 +1,4 @@
+The function A::evaluate() has been overloaded by A::evaluate(integer) (line: 4)
+Overriding function A::evaluate with function B::evaluate (line: 8)
+Overriding function B::evaluate with function C::evaluate (line: 12)
+Overriding function A::extendedEvaluate with function C::extendedEvaluate (line: 13)

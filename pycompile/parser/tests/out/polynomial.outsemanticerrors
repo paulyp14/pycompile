@@ -1,0 +1,3 @@
+Overriding function POLYNOMIAL::evaluate with function LINEAR::evaluate (line: 11)
+Overriding function POLYNOMIAL::evaluate with function QUADRATIC::evaluate (line: 20)
+Cannot call function poopoo on non-class type void (called at line: 97)

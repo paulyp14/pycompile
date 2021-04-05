@@ -1,0 +1,2 @@
+Overriding function Base::float_func with function Mid::float_func (line: 11)
+Multiply declared member function: End::test() in End (line: 38)

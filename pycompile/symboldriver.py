@@ -8,6 +8,8 @@ from pycompile.symbol.visitor import SemanticTableBuilder, TypeChecker
 
 def analyze_test_file(input_file: Path, output_dir: str):
     print(f'   Parsing source file: {input_file}')
+    error_name = path_join(output_dir, f'{input_file.stem}.outsemanticerrors')
+    table_name = path_join(output_dir, f'{input_file.stem}.outsymboltables')
 
     parser = Parser("Table")
 
@@ -22,11 +24,21 @@ def analyze_test_file(input_file: Path, output_dir: str):
     tc = TypeChecker(stb.global_table, None)
     parser.traverse(tc)
 
-    print('Finished \n\n')
+    all_errors = []
+    for error in stb.errors + tc.errors:
+        if 'line: ' not in error.args[0]:
+            all_errors.append((1000000, error.args[0]))
+        else:
+            all_errors.append((int(error.args[0].split('line: ')[1].split(')')[0]), error.args[0]))
+    sorted_errors = sorted(all_errors, key=lambda x: x[0])
+    with open(error_name, 'w') as f:
+        for error in sorted_errors:
+            f.write(error[1] + '\n')
 
     arr_rep = stb.global_table.get_repr()
-    for row in arr_rep:
-        print(row)
+    with open(table_name, 'w') as f:
+        for row in arr_rep:
+            f.write(row + '\n')
 
 
 def run_tests(test_dir: str, output_dir: str):
@@ -37,10 +49,11 @@ def run_tests(test_dir: str, output_dir: str):
         # if test_file.suffix == '.src' and test_file.stem == 'indices_test':
         # if test_file.suffix == '.src' and test_file.stem == 'polynomial':
         # if test_file.suffix == '.src' and test_file.stem == 'inheritance_scoping':
-        if test_file.suffix == '.src' and test_file.stem == 'polynomial_semantic_errors':
+        # if test_file.suffix == '.src' and test_file.stem == 'polynomial_semantic_errors':
+        # if test_file.suffix == '.src' and test_file.stem == 'overriding':
         # if test_file.suffix == '.src' and test_file.stem == 'bubblesort':
         # if test_file.suffix == '.src' and test_file.stem == 'class_func':
-        # if test_file.suffix == '.src':
+        if test_file.suffix == '.src':
             analyze_test_file(test_file, output_dir)
 
 

@@ -1,0 +1,42 @@
+class A {
+    public func evaluate() : void;
+    public func extendedEvaluate() : void;
+    public func evaluate(integer a) : void;
+};
+
+class B inherits A {
+    public func evaluate() : void;
+};
+
+class C inherits B {
+    public func evaluate() : void;
+    public func extendedEvaluate() : void;
+};
+
+func A::evaluate() : void {
+
+}
+
+func A::evaluate(integer a) : void {
+
+}
+
+func B::evaluate() : void {
+
+}
+
+func A::extendedEvaluate() : void {
+
+}
+
+func C::evaluate() : void {
+
+}
+
+func C::extendedEvaluate() : void {
+
+}
+
+main {
+
+}
