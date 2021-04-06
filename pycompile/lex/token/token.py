@@ -15,7 +15,7 @@ class Token(abc.ABC):
 
     def replace_self(self, code: str) -> str:
         # lexm = self.lexeme
-        # try1 = code.replace(lexm, '')
+        # try1 = codegenr.replace(lexm, '')
         return code.replace(self.lexeme, '', 1)
 
     def set_position(self, line_num: int):

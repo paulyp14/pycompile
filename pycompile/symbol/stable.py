@@ -12,6 +12,13 @@ class SymbolTable:
         self.records: Dict[str, SemanticRecord] = OrderedDict()
         self.matched = False
         self.duplicated_generator: dict = {}
+        self.req_mem: int = 0
+
+    def compute_size(self, computer, first_pass: bool):
+        self.req_mem = 0
+        for record in self.records.values():
+            if record.kind in (Kind.Variable, Kind.Parameter):
+                self.req_mem += computer.compute_from_record(record, first_pass)
 
     def generate_duplicated_param_name(self, record: SemanticRecord) -> str:
         if record.get_name() not in self.duplicated_generator.keys():

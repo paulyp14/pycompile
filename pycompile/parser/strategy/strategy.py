@@ -28,7 +28,7 @@ class ParsingStrategy(ABC):
         if code is not None:
             self.reset(code)
         if self.code is None:
-            raise ValueError("No code to parse")
+            raise ValueError("No codegenr to parse")
         # tokenize and parse
         self.analyzer.tokenize(self.code)
         self.analyzer.add_final_token()

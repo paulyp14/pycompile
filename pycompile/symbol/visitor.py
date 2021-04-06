@@ -7,8 +7,8 @@ from pycompile.symbol.record import SemanticRecord, Kind, Type, TypeEnum, TypeRe
 
 
 class Visitor:
-    def __init__(self):
-        self.global_table: Optional[SymbolTable] = None
+    def __init__(self, symbol_table: SymbolTable = None):
+        self.global_table: Optional[SymbolTable] = symbol_table
         self.errors: List[Union[SemanticError, SemanticWarning]] = []
 
     def visit(self, node: AbstractSyntaxNode):
