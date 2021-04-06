@@ -53,6 +53,7 @@ def run_tests(test_dir: str, output_dir: str):
         # if test_file.suffix == '.src' and test_file.stem == 'overriding':
         # if test_file.suffix == '.src' and test_file.stem == 'bubblesort':
         # if test_file.suffix == '.src' and test_file.stem == 'class_func':
+        #
         if test_file.suffix == '.src':
             analyze_test_file(test_file, output_dir)
 

@@ -1,0 +1,15 @@
+class A {
+    private integer a;
+    public func my_func() : void;
+};
+
+func A::my_func() : void {}
+
+main {
+    var {
+        A myA;
+    }
+
+    myA.missing();
+    myA.b = 6;
+}

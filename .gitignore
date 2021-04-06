@@ -11,3 +11,5 @@ __pycache__
 *.outstack
 *.outast.gv.pdf
 *.outast.gv
+*.outsemanticerrors
+*.outsymboltables

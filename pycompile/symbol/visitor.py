@@ -407,6 +407,8 @@ class TypeChecker(Visitor):
                 validated = False
             elif func_rt.enum == TypeEnum.Void and len(self.return_types) == 0:
                 validated = True
+            elif func_rt.enum != TypeEnum.Void and len(self.return_types) == 0:
+                validated = False
             else:
                 try:
                     validated = all([
@@ -565,7 +567,6 @@ class TypeChecker(Visitor):
                 # validate params list
                 if idx != 0:
                     if len(types) != idx:
-                        print('Error geting types')
                         func_scopes = self.current_scope
                     else:
                         func_owner = types[idx - 1]

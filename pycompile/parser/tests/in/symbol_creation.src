@@ -1,0 +1,63 @@
+class A {
+    private float a;
+    private float b;
+
+    public func float_func(): void;
+    public func float_func(integer a, integer b): integer;
+    public func float_func(float x, float y): integer;
+};
+
+
+class B {
+    private float A;
+    private float c;
+
+    public func float_func(): void;
+    public func integer_func(): void;
+};
+
+class C inherits B {
+    private float c;
+    private float d;
+
+    public func float_func(): void;
+};
+
+class C {
+    private string whoCares;
+    private string whoCares;
+};
+
+func A::float_func() : void {
+}
+
+func A::float_func(integer a, integer b): integer {
+    return (1);
+}
+
+func A::float_func(float x, float y) : integer {
+    return (1);
+}
+
+func B::float_func() : void {}
+
+func B::integre_func() : void {}
+
+func C::float_func() : void {
+    var {
+        integer a;
+        integer a;
+    }
+}
+
+func free_func() : void {}
+
+func free_func(integer A, integer C) : void {
+    var {
+        float free_func;
+    }
+}
+
+main {
+
+}
