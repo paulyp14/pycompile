@@ -48,7 +48,7 @@ class Comment(Token):
                     # end of nested comment
                     stack = stack[1::]
         # shouldn't get here....
-        # if it gets here it returns all of the code, unterminated comment
+        # if it gets here it returns all of the codegenr, unterminated comment
         return code
 
     @staticmethod

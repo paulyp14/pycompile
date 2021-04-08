@@ -34,7 +34,7 @@ class LexicalAnalyzer:
             # if this was a comment and it was multiline, add the numbers of lines now
             # so the next token has the right position
             line += 0 if not isinstance(self.tokens[-1], Comment) else self.tokens[-1].get_num_lines()
-            # add the string representation of the token to the tokenized code
+            # add the string representation of the token to the tokenized codegenr
             self.tokenized += (
                 self.code[start_idx: start_idx + tok_start] +
                 (self.tokens[-1].tok_str() if not self.tokens[-1].was_inserted() else '')
@@ -84,7 +84,7 @@ class LexicalAnalyzer:
             whitespace_match = LexicalAnalyzer.whitespace.search(code)
             # =====
             # breaking invalid lexemes only on whitespace
-            # idx = len(code) if not whitespace_match else whitespace_match.start()
+            # idx = len(codegenr) if not whitespace_match else whitespace_match.start()
 
             # =====
             # breaking invalid lexemes on the next valid
