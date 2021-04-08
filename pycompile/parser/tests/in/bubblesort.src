@@ -33,7 +33,9 @@ func printArray(integer arr[], integer size) : void
   var
   {
     integer n;
-    integer i; 
+    integer i;
+    integer c;
+    integer b;
   }
   n = size;
   i = 0; 
@@ -41,7 +43,9 @@ func printArray(integer arr[], integer size) : void
     write(arr[i]);
       i = i+1;
   };
-} 
+}
+
+func free_func() : void {}
 
 // main funtion to test above
 main 

@@ -1,2 +1,2 @@
 Overriding function Base::float_func with function Mid::float_func (line: 11)
-Multiply declared member function: End::test() in End (line: 38)
+Type(s) of return statement(s) for function free_func(float, float) do no match with declared return type float (line: 42)

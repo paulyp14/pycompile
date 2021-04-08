@@ -15,6 +15,8 @@ Definition provided for undeclared member function: QUADRATIC::build2(float, flo
 Multiply declared free function: f(integer) (line: 107)
 Multiply declared function parameter: i in f(integer, integer) (line: 108)
 The function f(integer) has been overloaded by f(integer, integer) (line: 108)
+Type(s) of return statement(s) for function f(integer, integer) do no match with declared return type integer (line: 108)
+Type(s) of return statement(s) for function f3(integer[2][3]) do no match with declared return type integer (line: 110)
 The variable a is of undefined type A (line: 118)
 The variable f1 is of undefined type linear (line: 120)
 The variable f2 is of undefined type quadratic (line: 121)
