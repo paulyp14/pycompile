@@ -29,6 +29,7 @@ class AbstractSyntaxNode:
         self.sem_rec = None
         self.type_rec = None
         self.sym_table = None
+        self.reserved_register: str = None
 
         for key, item in kwargs.items():
             if isinstance(item, AbstractSyntaxNode):

@@ -1,0 +1,33 @@
+class A {
+    private float a;
+    private integer b;
+    private string c;
+};
+
+public class B {
+    private A aOne;
+    private A aTwo;
+    private string my_string;
+};
+
+class C {
+    private integer a[][][];
+    private integer b[3][2][];
+    private string c[][5][3];
+    private float d[4][][6];
+    private string e[3][4];
+    private float f[5][6][7][8];
+    private A g[7];
+};
+
+main {
+    var {
+        C c;
+        A a;
+        B b;
+        integer x;
+        integer y;
+        integer z;
+    }
+    y = 1 + 2 * 3;
+}

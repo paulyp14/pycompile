@@ -10,6 +10,7 @@ from pycompile.symbol.visitor import SemanticTableBuilder, TypeChecker
 
 def analyze_test_file(input_file: Path, output_dir: str):
     print(f'   Parsing source file: {input_file}')
+    moon_name = path_join(output_dir, f'{input_file.stem}.moon')
 
     parser = Parser("Table")
 
@@ -29,6 +30,10 @@ def analyze_test_file(input_file: Path, output_dir: str):
 
     gnrtr = CodeGenerator(alloc.global_table)
     parser.traverse(gnrtr)
+
+    with open(moon_name, 'w') as f:
+        for code in gnrtr.code_stream + gnrtr.data_stream:
+            f.write(code + '\n')
 
     # all_errors = []
     # for error in stb.errors + tc.errors:
@@ -54,7 +59,8 @@ def run_tests(test_dir: str, output_dir: str):
     for test_file in Path(test_dir).iterdir():
         # if test_file.suffix == '.src' and test_file.stem == 'indices_test':
         # if test_file.suffix == '.src' and test_file.stem == 'polynomial':
-        if test_file.suffix == '.src' and test_file.stem == 'inheritance_scoping':
+        # if test_file.suffix == '.src' and test_file.stem == 'inheritance_scoping':
+        if test_file.suffix == '.src' and test_file.stem == 'allocation':
         # if test_file.suffix == '.src' and test_file.stem == 'polynomial_semantic_errors':
         # if test_file.suffix == '.src' and test_file.stem == 'overriding':
         # if test_file.suffix == '.src' and test_file.stem == 'bubblesort':

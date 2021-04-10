@@ -128,6 +128,7 @@ class SemanticRecord:
         self.visibility: Optional[Visibility] = visibility
         self.parent_tables: List = []
         self.position: Optional[int] = None
+        self.memory_size: int = 0
 
         self.RECORD_LIST.append(self)
 

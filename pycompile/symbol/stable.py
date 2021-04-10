@@ -18,7 +18,9 @@ class SymbolTable:
         self.req_mem = 0
         for record in self.records.values():
             if record.kind in (Kind.Variable, Kind.Parameter):
-                self.req_mem += computer.compute_from_record(record, first_pass)
+                mem_size = computer.compute_from_record(record, first_pass)
+                record.memory_size = mem_size
+                self.req_mem += mem_size
 
     def generate_duplicated_param_name(self, record: SemanticRecord) -> str:
         if record.get_name() not in self.duplicated_generator.keys():
