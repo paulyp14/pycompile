@@ -45,7 +45,7 @@
 <Factor> ::= 'floatnum' make-leaf 
 <Factor> ::= 'stringlit' make-leaf 
 <Factor> ::= '(' <Expr> make-expr ')'
-<Factor> ::= 'not' make-leaf <Factor> make-factor make-negation
+<Factor> ::= 'not' make-leaf make-arSep <Factor> make-factor make-negation
 <Factor> ::= <Sign> <Factor> make-factor make-signed
 <Factor> ::= 'qm' '[' <Expr> make-expr ':' <Expr> make-expr ':' <Expr> make-expr ']' make-tern
 

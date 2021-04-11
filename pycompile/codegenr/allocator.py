@@ -75,6 +75,8 @@ class MemoryAllocator(Visitor):
             elif isinstance(node, Signed):
                 # PERFORM OPERATION
                 self.__signed(node)
+            elif isinstance(node, Negation):
+                self.__negation(node)
             elif isinstance(node, Var):
                 pass
             elif isinstance(node, Operator):
@@ -92,6 +94,12 @@ class MemoryAllocator(Visitor):
             return
         temp_name = f'$temp_{self.current_scope.next_temp_var_id()}'
         temp_rec = SemanticRecord(temp_name, Kind.Variable, record_type=node.factor.type_rec.type)
+        self.current_scope.add_record(temp_rec)
+        node.temp_var = temp_rec
+
+    def __negation(self, node: Negation):
+        temp_name = temp_name = f'$temp_{self.current_scope.next_temp_var_id()}'
+        temp_rec = SemanticRecord(temp_name, Kind.Variable, record_type=node.type_rec.type)
         self.current_scope.add_record(temp_rec)
         node.temp_var = temp_rec
 

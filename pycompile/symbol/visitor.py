@@ -356,10 +356,12 @@ class TypeChecker(Visitor):
         elif isinstance(node, (ArithExpr, Expr, Term, Signed, Negation, Factor)):
             if isinstance(node, (ArithExpr, Expr)):
                 node.type_rec = node.arith_expr.type_rec
-            elif isinstance(node, (Term, Signed, Negation)):
+            elif isinstance(node, (Term, Signed)):
                 node.type_rec = node.factor.type_rec
             elif isinstance(node, Factor):
                 node.type_rec = node.child.type_rec
+            elif isinstance(node, Negation):
+                node.type_rec = TypeRecord(Type(TypeEnum.Integer, 'integer'))
 
         elif isinstance(node, Statement) and isinstance(node.statement, Var):
             node.type_rec = node.statement.type_rec

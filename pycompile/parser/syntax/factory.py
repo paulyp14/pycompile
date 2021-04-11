@@ -111,6 +111,7 @@ class AbstractSyntaxNodeFactory:
     def create_negation(**kwargs):
         stack: Stack = kwargs.get('semantic_stack')
         kwargs['factor'] = stack.pop()
+        stack.pop()
         kwargs['op'] = stack.pop()
         return Negation(**kwargs)
 

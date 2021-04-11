@@ -7,7 +7,6 @@ from pycompile.symbol.stable import SymbolTable
 from pycompile.symbol.record import SemanticRecord
 
 
-
 class CodeGenerator(Visitor):
 
     op_trans = {
@@ -19,7 +18,11 @@ class CodeGenerator(Visitor):
         '>': 'cgt',
         '>=': 'cge',
         '<': 'clt',
-        '<=': 'cle'
+        '<=': 'cle',
+        '&': 'and',
+        '|': 'or',
+        '==': 'ceq',
+        '<>': 'cne'
     }
 
     req_comment_len = 100
@@ -224,7 +227,12 @@ class CodeGenerator(Visitor):
 
 
     def __negation(self, node: Negation):
-        pass
+        val_reg = self.registers.pop()
+        temp_reg = self.registers.pop()
+        use_temp = node.factor.temp_var is not None
+        self.__load_word(node.factor, val_reg, use_temp=use_temp)
+        self.__add_to_code_stream(f'not {temp_reg},{val_reg}', comment_text='% perform negation', comment_position='inline')
+        self.__store_word(node, temp_reg)
 
     def __if(self, node: If):
         self.stream_stack_key.pop()
