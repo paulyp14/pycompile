@@ -134,7 +134,9 @@ class AbstractSyntaxNode:
 
     def accept(self, visitor):
         visitor.pre_visit(self)
-        for child in self.get_children():
+        for i, child in enumerate(self.get_children()):
+            if i > 0:
+                visitor.mid_visit(i, self)
             child.accept(visitor)
         visitor.visit(self)
 

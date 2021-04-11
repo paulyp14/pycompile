@@ -15,8 +15,16 @@ class CodeGenerator(Visitor):
         '+': 'add',
         '-': 'sub',
         '/': 'div',
-        '=': 'sw'
+        '=': 'sw',
+        '>': 'cgt',
+        '>=': 'cge',
+        '<': 'clt',
+        '<=': 'cle'
     }
+
+    req_comment_len = 100
+    max_indent = 15
+    max_istr = 30
 
     def __init__(self, symbol_table: SymbolTable = None):
         super().__init__(symbol_table=symbol_table)
@@ -32,9 +40,37 @@ class CodeGenerator(Visitor):
         self.current_offset: int = 0
         self.result_stack: Stack = Stack()
         self.current_scope: Optional[SymbolTable] = None
+        self.current_label_idxs: dict = {
+            'if': 0,
+            'while': 0
+        }
+        self.next_label: Optional[str] = None
+        self.stream_stack_key: Stack() = Stack()
+        self.control_flow_node_stack: Stack = Stack()
+        self.control_flow_stream_stack: Stack = Stack()
 
-    def __add_to_code_stream(self, instruction: str, label: str = None, comment_text: str = None, comment_position: str = 'above'):
-        self.__add_to_stream("CODE", instruction=instruction, label=label, comment_text=comment_text, comment_position=comment_position)
+    def __generate_control_flow_label(self) -> str:
+        key = 'if' if isinstance(self.control_flow_node_stack.peek(), If) else 'while'
+        idx = self.current_label_idxs[key]
+        self.current_label_idxs[key] += 1
+        return f'{key}_{idx}'
+
+    def __add_to_code_stream(self, instruction: str, label: str = None, comment_text: str = None, comment_position: str = 'above', add_label: bool = True):
+        stream_obj = None
+        if not self.control_flow_stream_stack.is_empty():
+            stream_obj = self.control_flow_stream_stack.peek()[self.stream_stack_key.peek()]
+            if len(stream_obj) == 0:
+                label = self.control_flow_stream_stack.peek()['label']
+                if self.stream_stack_key.peek() not in ('if', 'while'):
+                    label = f'{label}_{self.stream_stack_key.peek()}'
+        if self.next_label is not None:
+            if label is not None:
+                # need to add an intermediate label
+                self.__add_to_stream("CODE", instruction=f'j {label}', label=self.next_label, comment_text='% add intermediate jump to prevent conflicting labels', comment_position='inline', stream_obj=stream_obj, add_label=add_label)
+            else:
+                label = self.next_label
+            self.next_label = None
+        self.__add_to_stream("CODE", instruction=instruction, label=label, comment_text=comment_text, comment_position=comment_position, stream_obj=stream_obj, add_label=add_label)
 
     def __add_to_data_stream(self, size: int, label: str = None, comment_text: str = None, comment_position: str = 'above'):
         instruction = f'res {size}'
@@ -43,10 +79,19 @@ class CodeGenerator(Visitor):
         self.current_offset += size
         self.__add_to_stream("DATA", instruction=instruction, label=label, comment_text=comment_text, comment_position=comment_position)
 
-    def __add_to_stream(self, stream: str, instruction: str, label: str = None, comment_text: str = None, comment_position: str = 'above'):
-        max_indent = 15
-        max_istr = 30
-        stream = self.code_stream if stream == 'CODE' else self.data_stream
+    def __add_to_stream(self,
+                        stream: str,
+                        instruction: str,
+                        label: str = None,
+                        comment_text: str = None,
+                        comment_position: str = 'above',
+                        stream_obj: List = None,
+                        add_label: bool = True):
+
+        if stream_obj is None:
+            stream = self.code_stream if stream == 'CODE' else self.data_stream
+        else:
+            stream = stream_obj
         # add comment line
         inline_comment = None
         if comment_text is not None and comment_position == 'inline':
@@ -55,10 +100,13 @@ class CodeGenerator(Visitor):
             stream.append(f'{comment_text}')
         if label is None:
             label = ""
-        padding = max_indent - len(label)
+        if add_label:
+            padding = self.max_indent - len(label)
+        else:
+            padding = 0
         inline_comment_str = ""
         if inline_comment is not None:
-            inline_comment_str = f'{(max_istr - len(instruction)) * " "}{inline_comment}'
+            inline_comment_str = f'{(self.max_istr - len(instruction)) * " "}{inline_comment}'
         stream.append(f'{label}{padding * " "}{instruction}{inline_comment_str}')
         if comment_text is not None and comment_position == 'below':
             stream.append(comment_text)
@@ -74,8 +122,27 @@ class CodeGenerator(Visitor):
 
         if isinstance(node, FuncBody) and isinstance(node.parent, ProgramNode):
             self.accept = True
+        elif isinstance(node, (If, While)):
+            self.control_flow_node_stack.push(node)
+            if isinstance(node, If):
+                key = 'if'
+                cf_dict = {'if': [], 'then': [], 'else': [], 'label': self.__generate_control_flow_label()}
+            else:
+                key = 'while'
+                cf_dict = {'while': [], 'then': [], 'label': self.__generate_control_flow_label()}
+            self.control_flow_stream_stack.push(cf_dict)
+            self.stream_stack_key.push(key)
         if node.sym_table is not None:
             self.current_scope = node.sym_table
+
+    def mid_visit(self, child_idx: int, node: AbstractSyntaxNode):
+        not_empty = not self.control_flow_node_stack.is_empty()
+        if not_empty and isinstance(node, If) and isinstance(self.control_flow_node_stack.peek(), If):
+            self.stream_stack_key.pop()
+            self.stream_stack_key.push('then' if child_idx == 1 else 'else')
+        elif not_empty and isinstance(node, While) and isinstance(self.control_flow_node_stack.peek(), While):
+            self.stream_stack_key.pop()
+            self.stream_stack_key.push('then' if child_idx == 1 else 'UHOH')
 
     def visit(self, node: AbstractSyntaxNode):
         if isinstance(node, ProgramNode):
@@ -112,9 +179,11 @@ class CodeGenerator(Visitor):
                     node.temp_var = res_reg
                 else:
                     node.sem_rec = res_reg
-            elif isinstance(node, (Signed, Negation)):
+            elif isinstance(node, Signed):
                 # PERFORM OPERATION
-                pass
+                self.__signed(node)
+            elif isinstance(node, Negation):
+                self.__negation(node)
             elif isinstance(node, Var):
                 pass
             elif isinstance(node, Operator):
@@ -122,17 +191,130 @@ class CodeGenerator(Visitor):
                 self.__binary_op(node)
             elif isinstance(node, Write):
                 self.__write(node)
-
-            elif isinstance(node, Term):
-                pass
+            elif isinstance(node, Read):
+                self.__read(node)
+            elif isinstance(node, If):
+                self.__if(node)
+            elif isinstance(node, While):
+                self.__while(node)
         # pop
         if node.sym_table is not None:
             self.current_scope = None
+
+    def __signed(self, node: Signed):
+        if node.op == '+':
+            # who cares
+            if node.factor.temp_var is not None:
+                node.temp_var = node.factor.temp_var
+            else:
+                node.sem_rec = node.factor.sem_rec
+            return
+        # requires operation
+        val_reg = self.registers.pop()
+        res_reg = self.registers.pop()
+        sign_reg = self.registers.pop()
+        use_temp = node.factor.temp_var is not None
+        self.__add_to_code_stream(f'addi {sign_reg},r0,-1', comment_text='% load -1 to flip the sign', comment_position='inline')
+        self.__load_word(node.factor, val_reg, use_temp=use_temp)
+        self.__add_to_code_stream(f'mul {res_reg},{val_reg},{sign_reg}', comment_text='% perform operation', comment_position='inline')
+        self.__store_word(node, res_reg)
+        self.registers.push(val_reg)
+        self.registers.push(res_reg)
+        self.registers.push(sign_reg)
+
+
+    def __negation(self, node: Negation):
+        pass
+
+    def __if(self, node: If):
+        self.stream_stack_key.pop()
+        next_label = None
+        if self.next_label is not None:
+            next_label = self.next_label
+            self.next_label = None
+        # TODO handle when else is empty....
+        #      can then be empty?
+        cf_label = self.control_flow_stream_stack.peek()["label"]
+        end_label = f'{cf_label}_end'
+        else_label = f'{cf_label}_else'
+        bz_label = else_label if node.else_block is not None else end_label
+        reg = self.registers.pop()
+        self.stream_stack_key.push('if')
+        use_temp = node.rel_expr.temp_var is not None
+        self.__load_word(node.rel_expr, reg, use_temp=use_temp)
+        instr = f'bz {reg},{bz_label}'
+        self.__add_to_code_stream(instr, comment_text=f'% branch to {bz_label}', comment_position='inline')
+        self.stream_stack_key.pop()
+        self.stream_stack_key.push('then')
+        self.__add_to_code_stream(f'j {end_label}', comment_text=f'% go to end {end_label}', comment_position='inline')
+        self.stream_stack_key.pop()
+        self.stream_stack_key.push('else')
+        self.__add_to_code_stream(CodeGenerator.__format_visual_break(f"end of {cf_label}"))
+        if next_label is not None:
+            self.__add_to_code_stream(instruction=f'j {end_label}', label=next_label, comment_text='% add intermediate jump to prevent conflicting labels', comment_position='inline')
+        self.stream_stack_key.pop()
+        self.control_flow_node_stack.pop()
+        cf_dict = self.control_flow_stream_stack.pop()
+        for i, line in enumerate([f'begin {cf_label}'] + cf_dict['if'] + cf_dict['then'] + cf_dict['else']):
+            if i == 0:
+                # add visual break
+                line = CodeGenerator.__format_visual_break(line, use_indent=True)
+            self.__add_to_code_stream(line, add_label=False)
+        self.registers.push(reg)
+        self.next_label = end_label
+
+    def __while(self, node: While):
+        reg = self.registers.pop()
+        next_label = None
+        if self.next_label is not None:
+            next_label = self.next_label
+            self.next_label = None
+        cf_label = self.control_flow_stream_stack.peek()["label"]
+        end_label = f'{cf_label}_end'
+        self.stream_stack_key.push('while')
+        use_temp = node.rel_expr.temp_var is not None
+        self.__load_word(node.rel_expr, reg, use_temp=use_temp)
+        instr = f'bz {reg},{end_label}'
+        self.__add_to_code_stream(instr, comment_text=f'% branch to {end_label}', comment_position='inline')
+        self.stream_stack_key.pop()
+        self.stream_stack_key.push('then')
+        self.__add_to_code_stream(f'j {cf_label}', comment_text=f'% go back to start of {cf_label}', comment_position='inline')
+        self.__add_to_code_stream(CodeGenerator.__format_visual_break(f"end of {cf_label}"))
+        cf_dict = self.control_flow_stream_stack.pop()
+        self.control_flow_node_stack.pop()
+        self.stream_stack_key.pop()
+        if next_label is not None:
+            self.__add_to_code_stream(instruction=f'j {end_label}', label=next_label, comment_text='% add intermediate jump to prevent conflicting labels', comment_position='inline')
+        for i, line in enumerate([f'begin {cf_label}'] + cf_dict['while'] + cf_dict['then']):
+            if i == 0:
+                # add visual break
+                line = CodeGenerator.__format_visual_break(line, use_indent=True)
+            self.__add_to_code_stream(line, add_label=False)
+        self.registers.push(reg)
+        self.next_label = end_label
+
+    def __read(self, node: Read):
+        val_reg = self.registers.pop()
+        buf_reg = self.registers.pop()
+        stack_instr = f'addi r14,r14,-{self.current_scope.req_mem}'
+        comment = '% increment stack frame'
+        self.__add_to_code_stream(stack_instr, comment_text=comment, comment_position='inline')
+        instr = f'addi {buf_reg},r0,buf'
+        comment = '% load address of buffer on stack frame'
+        self.__add_to_code_stream(instr, comment_text=comment, comment_position='inline')
+        self.__store_word('-8(r14)', buf_reg, comment=comment)
+        self.__add_to_code_stream('jl r15,getstr', comment_text='% jump to getstr subroutine', comment_position='inline')
+        self.__add_to_code_stream('jl r15,strint', comment_text='% jump to strint subroutine', comment_position='inline')
+        use_temp = node.var.temp_var is not None
+        self.__store_word(node.var, 'r13', use_temp=use_temp)
+        self.registers.push(val_reg)
+        self.registers.push(buf_reg)
 
     def __write(self, node: Write):
 
         val_reg = self.registers.pop()
         buf_reg = self.registers.pop()
+        eol_reg = self.registers.pop()
         use_temp = node.expr.temp_var is not None
         self.__load_word(node.expr, val_reg, use_temp=use_temp)
         stack_instr = f'addi r14,r14,-{self.current_scope.req_mem}'
@@ -140,7 +322,7 @@ class CodeGenerator(Visitor):
         self.__add_to_code_stream(stack_instr, comment_text=comment, comment_position='inline')
         self.__store_word('-8(r14)', val_reg, comment='% put value to print on stack frame')
         instr = f'addi {buf_reg},r0,buf'
-        comment = '% put address of bugger on stack frame'
+        comment = '% put address of buffer on stack frame'
         self.__add_to_code_stream(instr, comment_text=comment, comment_position='inline')
         self.__store_word('-12(r14)', buf_reg, comment=comment)
         instr = 'jl r15,intstr'
@@ -149,8 +331,11 @@ class CodeGenerator(Visitor):
         self.__add_to_code_stream('jl r15,putstr', comment_text='% jump to putstr subroutine', comment_position='inline')
         stack_instr = f'subi r14,r14,-{self.current_scope.req_mem}'
         self.__add_to_code_stream(stack_instr, comment_text='% decrement stack frame', comment_position='inline')
+        self.__add_to_code_stream(f'addi {eol_reg},r0,10', comment_text='% load EOL char', comment_position='inline')
+        self.__add_to_code_stream(f'putc {eol_reg}', comment_text='% print new line', comment_position='inline')
         self.registers.push(buf_reg)
         self.registers.push(val_reg)
+        self.registers.push(eol_reg)
 
         """
         val_reg = self.registers.pop()
@@ -163,7 +348,7 @@ class CodeGenerator(Visitor):
         if isinstance(left_op, AbstractSyntaxNode):
             var = left_op.temp_var if use_temp else left_op.sem_rec
             offset = self.__get_var_offset_str(var)
-            comment = comment = f'% store value in {var.name}'
+            comment = f'% store value in {var.name}'
         else:
             offset = left_op
         instr = f'sw {offset},{register}'
@@ -216,10 +401,13 @@ class CodeGenerator(Visitor):
         return f'{0 - var.mem_offset}(r14)'
 
     @staticmethod
-    def __format_visual_break(comment_text) -> str:
-        req_len = 100
-        beg = f'%  ====== {comment_text} '
-        return f'{beg}{"=" * (req_len - len(beg))}'
+    def __format_visual_break(comment_text, use_indent: bool = False) -> str:
+        if use_indent:
+            ident_beg = " " * CodeGenerator.max_indent
+        else:
+            ident_beg = ""
+        beg = f'{ident_beg}%  ====== {comment_text} '
+        return f'{beg}{"=" * (CodeGenerator.req_comment_len - len(beg))}'
 
     def __reserve_variable_memory(self, node: AbstractSyntaxNode):
         res_comment = f'% Reserve space for variable {node.sem_rec.name}'

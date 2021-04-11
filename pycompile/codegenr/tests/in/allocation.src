@@ -29,7 +29,25 @@ main {
     x = 27;
     y = 1 + 2 * 3;
     z = 15;
-    write(y);
-    write(z);
-    write(x);
+    if (x > y + 10)
+    then {
+        write(x + 10);
+        write(z);
+    }
+    else {
+        write(x - 10);
+        write(y);
+        if (x > y) then {
+            write(x + 100);
+        } else {
+            write(x - 100);
+        };
+    };
+    if (x > z)
+    then {
+        write(z);
+    }
+    else {
+        write(x);
+    };
 }

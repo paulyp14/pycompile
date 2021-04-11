@@ -20,6 +20,9 @@ class Visitor:
     def pre_visit(self, node: AbstractSyntaxNode):
         pass
 
+    def mid_visit(self, child_idx: int, node: AbstractSyntaxNode):
+        pass
+
 
 class SemanticTableBuilder(Visitor):
 

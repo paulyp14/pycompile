@@ -72,9 +72,9 @@ class MemoryAllocator(Visitor):
                     use_temp = node.factor.temp_var is not None
                     res_reg = node.factor.temp_var if use_temp else node.factor.sem_rec
                 node.temp_var = res_reg
-            elif isinstance(node, (Signed, Negation)):
+            elif isinstance(node, Signed):
                 # PERFORM OPERATION
-                pass
+                self.__signed(node)
             elif isinstance(node, Var):
                 pass
             elif isinstance(node, Operator):
@@ -86,6 +86,14 @@ class MemoryAllocator(Visitor):
 
     def __next_temp_name(self):
         return f'temp_{self.current_scope.var}'
+
+    def __signed(self, node: Signed):
+        if node.op == '+':
+            return
+        temp_name = f'$temp_{self.current_scope.next_temp_var_id()}'
+        temp_rec = SemanticRecord(temp_name, Kind.Variable, record_type=node.factor.type_rec.type)
+        self.current_scope.add_record(temp_rec)
+        node.temp_var = temp_rec
 
     def __load_literal(self, node: Factor):
         temp_name = f'$temp_{self.current_scope.next_temp_var_id()}'

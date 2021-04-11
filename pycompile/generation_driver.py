@@ -57,23 +57,19 @@ def run_tests(test_dir: str, output_dir: str):
     print(f'Using dir: {test_dir}')
     print(f'Outputting to: {output_dir}')
     for test_file in Path(test_dir).iterdir():
-        # if test_file.suffix == '.src' and test_file.stem == 'indices_test':
-        # if test_file.suffix == '.src' and test_file.stem == 'polynomial':
-        # if test_file.suffix == '.src' and test_file.stem == 'inheritance_scoping':
-        if test_file.suffix == '.src' and test_file.stem == 'allocation':
-        # if test_file.suffix == '.src' and test_file.stem == 'polynomial_semantic_errors':
-        # if test_file.suffix == '.src' and test_file.stem == 'overriding':
-        # if test_file.suffix == '.src' and test_file.stem == 'bubblesort':
-        # if test_file.suffix == '.src' and test_file.stem == 'class_func':
-        # if test_file.suffix == '.src':
+        # if test_file.suffix == '.src' and test_file.stem == 'allocation':
+        # if test_file.suffix == '.src' and test_file.stem == 'simple_while':
+        # if test_file.suffix == '.src' and test_file.stem == 'simple_main':
+        # if test_file.suffix == '.src' and test_file.stem == 'read_test':
+        if test_file.suffix == '.src':
             analyze_test_file(test_file, output_dir)
 
 
 def main(test_dir: str = None, output_dir: str = None):
     if test_dir is None:
-        test_dir = path_join(dirname(realpath(__file__)), 'parser', 'tests', 'in')
+        test_dir = path_join(dirname(realpath(__file__)), 'codegenr', 'tests', 'in')
     if output_dir is None:
-        output_dir = path_join(dirname(realpath(__file__)), 'parser', 'tests', 'out')
+        output_dir = path_join(dirname(realpath(__file__)), 'codegenr', 'tests', 'out')
     run_tests(test_dir, output_dir)
 
 
