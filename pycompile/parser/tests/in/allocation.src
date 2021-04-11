@@ -22,12 +22,14 @@ class C {
 
 main {
     var {
-        C c;
-        A a;
-        B b;
         integer x;
         integer y;
         integer z;
     }
+    x = 27;
     y = 1 + 2 * 3;
+    z = 15;
+    write(y);
+    write(z);
+    write(x);
 }

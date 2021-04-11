@@ -129,6 +129,7 @@ class SemanticRecord:
         self.parent_tables: List = []
         self.position: Optional[int] = None
         self.memory_size: int = 0
+        self.mem_offset: Optional[int] = None
 
         self.RECORD_LIST.append(self)
 

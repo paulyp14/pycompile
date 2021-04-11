@@ -13,13 +13,20 @@ class SymbolTable:
         self.matched = False
         self.duplicated_generator: dict = {}
         self.req_mem: int = 0
+        self.temp_var_id: int = 0
 
-    def compute_size(self, computer, first_pass: bool):
-        self.req_mem = 0
+    def next_temp_var_id(self):
+        idx = self.temp_var_id
+        self.temp_var_id += 1
+        return idx
+
+    def compute_size(self, computer, first_pass: bool, is_function: bool):
+        self.req_mem = 0 if not is_function else 4
         for record in self.records.values():
             if record.kind in (Kind.Variable, Kind.Parameter):
                 mem_size = computer.compute_from_record(record, first_pass)
                 record.memory_size = mem_size
+                record.mem_offset = self.req_mem
                 self.req_mem += mem_size
 
     def generate_duplicated_param_name(self, record: SemanticRecord) -> str:

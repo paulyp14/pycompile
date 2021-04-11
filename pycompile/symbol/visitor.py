@@ -450,6 +450,7 @@ class TypeChecker(Visitor):
         # isinstance(node.child, Var):
         comps = node.get_children()
         types = []
+        final_rec = None
         for idx, base in enumerate(comps[::2]):
             list_idx = (idx * 2) + 1
 
@@ -516,6 +517,7 @@ class TypeChecker(Visitor):
                             base.token.position
                         ))
                 if record is not None:
+                    final_rec = record
                     # TODO check for access modifiers
                     if record.member_of is not None and scope_rec.member_of is None:
                         # class member is being accessed from outside class scope
@@ -587,6 +589,7 @@ class TypeChecker(Visitor):
                             func_rec = tmp_scope_table.match_func_call(name, param_types)
                             if func_rec is not None:
                                 not_found = False
+                                final_rec = func_rec
                                 types.append(TypeRecord(func_rec.type))
                                 break
                     scope_counter -= 1
@@ -616,4 +619,4 @@ class TypeChecker(Visitor):
                     self.errors.append(error)
         # the type of the node is the type at the end of the chain
         node.type_rec = types[-1] if len(types) > 0 else None
-
+        node.sem_rec = final_rec

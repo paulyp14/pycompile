@@ -2,14 +2,14 @@ from __future__ import annotations
 import operator
 from enum import Enum
 from functools import reduce
-from typing import List, Dict, Union
+from typing import List, Dict, Union, Optional
 
+from pycompile.parser.syntax.node import *
 from pycompile.symbol.visitor import Visitor
 from pycompile.symbol.stable import SymbolTable
 from pycompile.codegenr.frame import StackFrame
 from pycompile.parser.syntax.ast import AbstractSyntaxNode
-from pycompile.symbol.record import SemanticRecord, TypeEnum, Type
-from pycompile.parser.syntax.node import FuncBody, ProgramNode
+from pycompile.symbol.record import SemanticRecord, TypeEnum, Type, Kind
 
 
 class MemoryByteSize(Enum):
@@ -35,18 +35,82 @@ class MemoryAllocator(Visitor):
         self.final_pass: bool = False
         self.stack_frames: List[StackFrame] = []
         self.first_node: AbstractSyntaxNode = None
+        self.current_scope: Optional[SymbolTable] = None
 
     def pre_visit(self, node: AbstractSyntaxNode):
         if self.first_node is None:
             self.first_node = node
+        if node.sym_table is not None:
+            self.current_scope = node.sym_table
 
     def visit(self, node: AbstractSyntaxNode):
         if not self.final_pass and node.sym_table is not None:
-            node.sym_table.compute_size(self, self.first_pass)
-        # TODO determine if this is needed after all....
-        elif self.final_pass:
-            if isinstance(node, FuncBody) and isinstance(node.parent, ProgramNode):
-                self.stack_frames.append(StackFrame(node.sym_table))
+            if isinstance(node.parent, ProgramNode) or isinstance(node, ProgramNode):
+                is_function = False
+            else:
+                is_function = node.sem_rec.kind == Kind.Function
+            node.sym_table.compute_size(self, self.first_pass, is_function)
+
+        if not self.final_pass and not self.first_pass:
+            if isinstance(node, Factor):
+                # can be Leaf or Var or Signed or Not
+                # if its a leaf, get a register and put the value
+                if isinstance(node.child, Leaf):
+                    self.__load_literal(node)
+                else:
+                    use_temp = node.child.temp_var is not None
+                    if use_temp:
+                        node.temp_var = node.child.temp_var
+                    else:
+                        node.sem_rec = node.child.sem_rec
+            elif isinstance(node, (ArithExpr, Expr, Term)):
+                # migrate the register
+                if isinstance(node, (ArithExpr, Expr)):
+                    use_temp = node.arith_expr.temp_var is not None
+                    res_reg = node.arith_expr.temp_var if use_temp else node.arith_expr.sem_rec
+                else:
+                    use_temp = node.factor.temp_var is not None
+                    res_reg = node.factor.temp_var if use_temp else node.factor.sem_rec
+                node.temp_var = res_reg
+            elif isinstance(node, (Signed, Negation)):
+                # PERFORM OPERATION
+                pass
+            elif isinstance(node, Var):
+                pass
+            elif isinstance(node, Operator):
+                # PERFORM OPERATION
+                self.__binary_op(node)
+            # pop
+        if node.sym_table is not None:
+            self.current_scope = None
+
+    def __next_temp_name(self):
+        return f'temp_{self.current_scope.var}'
+
+    def __load_literal(self, node: Factor):
+        temp_name = f'$temp_{self.current_scope.next_temp_var_id()}'
+        # the type should come from the type of the expr???
+        temp_rec = SemanticRecord(temp_name, Kind.Variable, record_type=Type.get_type_from_token(node))
+        self.current_scope.add_record(temp_rec)
+        node.temp_var = temp_rec
+
+    def __binary_op(self, node: Operator):
+        if node.operator == '=':
+            # ASSIGN DOES NOT REQUIRE TEMP
+            return
+        temp_name = f'$temp_{self.current_scope.next_temp_var_id()}'
+        # use LEFT if operator is not ASSIGN
+        # assign has to go into something that is not $TEMP
+        using = node.left_operand if node.operator != '=' else node.right_operand
+        use_temp = using.temp_var is not None
+        temp: SemanticRecord = using.temp_var if use_temp else using.sem_rec
+        # the type should come from the type of the expr???
+        temp_rec = SemanticRecord(temp_name, Kind.Variable, record_type=temp.type)
+        self.current_scope.add_record(temp_rec)
+        if use_temp:
+            node.temp_var = temp_rec
+        else:
+            node.sem_rec = temp_rec
 
     def compute_from_record(self, record: SemanticRecord, first_pass: bool) -> int:
         rec_type: TypeEnum = record.type.enum
