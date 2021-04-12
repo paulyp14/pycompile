@@ -1,0 +1,19 @@
+class A {
+    public integer aOne[20][3][30];
+};
+
+class B {
+   public float bOne;
+   public A aOne;
+};
+
+main {
+    var {
+        integer x;
+        float y;
+        integer z[10][15];
+        B myB;
+    }
+    z[9][10] = 12;
+    write(z[9][10]);
+}

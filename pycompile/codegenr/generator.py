@@ -168,6 +168,7 @@ class CodeGenerator(Visitor):
                     use_temp = node.child.temp_var is not None
                     if use_temp:
                         node.temp_var = node.child.temp_var
+                        node.temp_var.from_var = True
                     else:
                         node.sem_rec = node.child.sem_rec
             elif isinstance(node, (ArithExpr, Expr, Term)):
@@ -188,7 +189,7 @@ class CodeGenerator(Visitor):
             elif isinstance(node, Negation):
                 self.__negation(node)
             elif isinstance(node, Var):
-                pass
+                self.__process_var(node)
             elif isinstance(node, Operator):
                 # PERFORM OPERATION
                 self.__binary_op(node)
@@ -203,6 +204,66 @@ class CodeGenerator(Visitor):
         # pop
         if node.sym_table is not None:
             self.current_scope = None
+
+    def __process_var(self, node: Var):
+        comps = node.get_children()
+        temp_reg = self.registers.pop()
+        acc_reg = self.registers.pop()
+        self.__add_to_code_stream(f'addi {acc_reg},r0,0', comment_text='% COMPLEX VAR ACCESS: start with zero', comment_position='inline')
+        # loop through each part of the complex statement
+        # for each individual one, calculate the offset
+        # keep running total of offsets
+        for idx, base in enumerate(comps[::2]):
+            list_idx = (idx * 2) + 1
+            is_var = isinstance(comps[list_idx], IndList)
+            if is_var and idx == 0:
+                self.__process_var_access(base, comps[list_idx], temp_reg)
+                self.__add_to_code_stream(f'sub {acc_reg},{acc_reg},{temp_reg}', comment_text='% load position of index', comment_position='inline')
+            elif is_var:
+                self.__process_var_access(base, comps[list_idx], temp_reg, prev=comps[list_idx - 3], prev_list=comps[list_idx - 2])
+            elif idx == 0:
+                self.__process_func_call(base, comps[list_idx])
+            else:
+                self.__process_func_call(base, comps[list_idx], prev=comps[list_idx - 3], prev_list=comps[list_idx - 2])
+        self.__store_word(node, acc_reg)
+        self.registers.push(temp_reg)
+        self.registers.push(acc_reg)
+
+    def __process_var_access(self, base: AbstractSyntaxNode, b_list: AbstractSyntaxNode, outer_reg: str, prev: AbstractSyntaxNode = None, p_list: AbstractSyntaxNode = None):
+        temp_reg = self.registers.pop()
+        acc_reg = self.registers.pop()
+        type_size = self.__get_size(base.sem_rec.type)
+
+        if len(b_list.get_children()) > 0:
+            # have to calculate array offset
+            self.__add_to_code_stream(f'addi {acc_reg},r0,{type_size}',
+                                      comment_text='% start accumulation of array indexes', comment_position='inline')
+            for idx in b_list.get_children():
+                use_temp = idx.temp_var is not None
+                self.__load_word(idx, temp_reg, use_temp=use_temp)
+                self.__add_to_code_stream(f'mul {acc_reg},{acc_reg},{temp_reg}', comment_text='% accumulate array indexes', comment_position='inline')
+        else:
+            # not an array
+            self.__add_to_code_stream(f'addi {acc_reg},r0,{type_size}', comment_text='% no array indexes to calculate', comment_position='inline')
+        if prev is None:
+            # calculate offset from the top of the frame pointer
+            self.__add_to_code_stream(f'subi {temp_reg},r14,{base.sem_rec.mem_offset}', comment_text='% calculate beginning of array from stack frame point', comment_position='inline')
+        else:
+            pass
+        self.__add_to_code_stream(f'sub {temp_reg},{temp_reg},{acc_reg}', comment_text='% calculate array index in memory', comment_position='inline')
+        self.__add_to_code_stream(f'sub {outer_reg},r0,{temp_reg}')
+        self.registers.push(temp_reg)
+        self.registers.push(acc_reg)
+
+    def __get_size(self, type_):
+        trans = {'string': 4, 'integer': 4, 'float': 8}
+        if type_.type_name not in trans.keys():
+            return self.global_table.records[type_.type_name].table_link.req_mem
+        else:
+            return trans[type_.type_name]
+
+    def __process_func_call(self, base: AbstractSyntaxNode, b_list: AbstractSyntaxNode, prev: AbstractSyntaxNode = None, p_list: AbstractSyntaxNode = None):
+        pass
 
     def __signed(self, node: Signed):
         if node.op == '+':
@@ -224,7 +285,6 @@ class CodeGenerator(Visitor):
         self.registers.push(val_reg)
         self.registers.push(res_reg)
         self.registers.push(sign_reg)
-
 
     def __negation(self, node: Negation):
         val_reg = self.registers.pop()
@@ -352,21 +412,37 @@ class CodeGenerator(Visitor):
         self.__add_to_code_stream(f'putc {val_reg}', comment_text='% print the value', comment_position='inline')
         """
 
-    def __store_word(self, left_op: Union[str, AbstractSyntaxNode], register: str, use_temp: bool = True, comment: str = None):
+    def __store_word(self, left_op: Union[str, AbstractSyntaxNode], register: str, use_temp: bool = True, comment: str = None, req_intermediate: bool = False):
         if isinstance(left_op, AbstractSyntaxNode):
-            var = left_op.temp_var if use_temp else left_op.sem_rec
-            offset = self.__get_var_offset_str(var)
-            comment = f'% store value in {var.name}'
+            if req_intermediate and isinstance(left_op, Var) and left_op.temp_var is not None:
+                inter_reg = self.registers.pop()
+                self.__add_to_code_stream(f'lw {inter_reg},{self.__get_var_offset_str(left_op.temp_var)}')
+                offset = f'0({inter_reg})'
+                comment = f'% store value in {left_op.temp_var.name}'
+            else:
+                var = left_op.temp_var if use_temp else left_op.sem_rec
+                offset = self.__get_var_offset_str(var)
+                comment = f'% store value in {var.name}'
         else:
             offset = left_op
         instr = f'sw {offset},{register}'
         self.__add_to_code_stream(instr, comment_text=comment, comment_position='inline')
 
     def __load_word(self, node: AbstractSyntaxNode, register: str, use_temp: bool = True):
-        var = node.temp_var if use_temp else node.sem_rec
-        instr = f'lw {register},{self.__get_var_offset_str(var)}'
+        if node.temp_var is not None and node.temp_var.from_var:
+            # have to load the variable address first
+            inter_reg = self.registers.pop()
+            self.__add_to_code_stream(f'lw {inter_reg},{self.__get_var_offset_str(node.temp_var)}')
+            offset = f'0({inter_reg})'
+            var = node.temp_var
+        else:
+            var = node.temp_var if use_temp else node.sem_rec
+            offset = self.__get_var_offset_str(var)
+        instr = f'lw {register},{offset}'
         comment = f'% load value for {var.name}'
         self.__add_to_code_stream(instr, comment_text=comment, comment_position='inline')
+        if node.temp_var is not None and node.temp_var.from_var:
+            self.registers.push(inter_reg)
 
     def __binary_op(self, node: Operator):
         right_reg = self.registers.pop()
@@ -388,7 +464,7 @@ class CodeGenerator(Visitor):
             store_node = node.left_operand
             use_temp = False
         # store the result
-        self.__store_word(store_node, temp_reg, use_temp=use_temp)
+        self.__store_word(store_node, temp_reg, use_temp=use_temp, req_intermediate=True)
         if node.operator != '=':
             self.registers.push(left_reg)
             self.registers.push(temp_reg)

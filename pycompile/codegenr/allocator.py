@@ -78,7 +78,7 @@ class MemoryAllocator(Visitor):
             elif isinstance(node, Negation):
                 self.__negation(node)
             elif isinstance(node, Var):
-                pass
+                self.__process_var(node)
             elif isinstance(node, Operator):
                 # PERFORM OPERATION
                 self.__binary_op(node)
@@ -88,6 +88,34 @@ class MemoryAllocator(Visitor):
 
     def __next_temp_name(self):
         return f'temp_{self.current_scope.var}'
+
+    def __process_var(self, node: Var):
+        comps = node.get_children()
+        for idx, base in enumerate(comps[::2]):
+            list_idx = (idx * 2) + 1
+            is_var = isinstance(comps[list_idx], IndList)
+            if is_var:
+                self.__process_var_access(base, comps[list_idx])
+            elif idx == 0:
+                self.__process_func_call(base, comps[list_idx])
+            else:
+                self.__process_func_call(base, comps[list_idx], prev=comps[list_idx - 3], p_list=comps[list_idx - 2])
+        temp_name = f'$temp_{self.current_scope.next_temp_var_id()}'
+        temp_rec = SemanticRecord(temp_name, Kind.Variable, record_type=node.sem_rec.type)
+        self.current_scope.add_record(temp_rec)
+        node.temp_var = temp_rec
+
+    def __process_var_access(self, base: AbstractSyntaxNode, b_list: IndList):
+        if len(b_list.get_children()) == 0:
+            return
+
+        temp_name = f'$temp_{self.current_scope.next_temp_var_id()}'
+        temp_rec = SemanticRecord(temp_name, Kind.Variable, record_type=Type(TypeEnum.Integer, 'integer'))
+        # self.current_scope.add_record(temp_rec)
+        # b_list.temp_var = temp_rec
+
+    def __process_func_call(self, base: AbstractSyntaxNode, b_list: AbstractSyntaxNode, prev: AbstractSyntaxNode = None, p_list: AbstractSyntaxNode = None):
+        pass
 
     def __signed(self, node: Signed):
         if node.op == '+':

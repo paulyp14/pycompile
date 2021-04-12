@@ -523,6 +523,7 @@ class TypeChecker(Visitor):
                         ))
                 if record is not None:
                     final_rec = record
+                    base.sem_rec = record
                     # TODO check for access modifiers
                     if record.member_of is not None and scope_rec.member_of is None:
                         # class member is being accessed from outside class scope
@@ -595,6 +596,7 @@ class TypeChecker(Visitor):
                             if func_rec is not None:
                                 not_found = False
                                 final_rec = func_rec
+                                base.sem_rec = record
                                 types.append(TypeRecord(func_rec.type))
                                 break
                     scope_counter -= 1

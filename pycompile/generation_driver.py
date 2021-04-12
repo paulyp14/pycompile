@@ -60,7 +60,8 @@ def run_tests(test_dir: str, output_dir: str):
         # if test_file.suffix == '.src' and test_file.stem == 'allocation':
         # if test_file.suffix == '.src' and test_file.stem == 'simple_while':
         # if test_file.suffix == '.src' and test_file.stem == 'simple_main':
-        if test_file.suffix == '.src' and test_file.stem == 'read_test':
+        # if test_file.suffix == '.src' and test_file.stem == 'read_test':
+        if test_file.suffix == '.src' and test_file.stem == 'array_access':
         # if test_file.suffix == '.src':
             analyze_test_file(test_file, output_dir)
 
