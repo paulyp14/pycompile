@@ -43,6 +43,7 @@ class CodeGenerator(Visitor):
 
         self.accept: bool = False
         self.in_main: bool = False
+        self.from_var: Optional[bool] = None
         self.current_offset: int = 0
         self.result_stack: Stack = Stack()
         self.current_scope: Optional[SymbolTable] = None
@@ -195,7 +196,8 @@ class CodeGenerator(Visitor):
                     use_temp = node.child.temp_var is not None
                     if use_temp:
                         node.temp_var = node.child.temp_var
-                        node.temp_var.from_var = isinstance(node.child, Var)
+                        node.temp_var.from_var = isinstance(node.child, Var) and self.from_var
+                        self.from_var = None
                     else:
                         node.sem_rec = node.child.sem_rec
             elif isinstance(node, (ArithExpr, Expr, Term)):
@@ -264,6 +266,7 @@ class CodeGenerator(Visitor):
         for idx, base in enumerate(comps[::2]):
             list_idx = (idx * 2) + 1
             is_var = isinstance(comps[list_idx], IndList)
+            self.from_var = is_var
             if is_var and idx == 0:
                 self.__process_var_access(base, comps[list_idx], temp_reg)
             elif is_var:
@@ -297,10 +300,10 @@ class CodeGenerator(Visitor):
                 self.__add_to_code_stream(f'mul {acc_reg},{acc_reg},{temp_reg}', comment_text='% accumulate array indexes', comment_position='inline')
         else:
             # not an array
-            # TODO SHOULD THIS BE 0???
-            self.__add_to_code_stream(f'addi {acc_reg},r0,{type_size}', comment_text='% no array indexes to calculate', comment_position='inline')
-            # self.__add_to_code_stream(f'addi {acc_reg},r0,0', comment_text='% no array indexes to calculate',
-            #                           comment_position='inline')
+            # TODO SHOULD THIS BE 0??? Seems like it should
+            # self.__add_to_code_stream(f'addi {acc_reg},r0,{type_size}', comment_text='% no array indexes to calculate', comment_position='inline')
+            self.__add_to_code_stream(f'addi {acc_reg},r0,0', comment_text='% no array indexes to calculate',
+                                      comment_position='inline')
         if prev is None:
             # calculate offset from the top of the frame pointer
             self.__add_to_code_stream(f'subi {temp_reg},r14,{base.sem_rec.mem_offset}', comment_text='% calculate beginning of array from stack frame point', comment_position='inline')
@@ -339,6 +342,7 @@ class CodeGenerator(Visitor):
         self.__add_to_code_stream(f'jl r15,{master_rec.func_label}')
         self.__add_to_code_stream(f'addi r14,r14,{self.current_scope.req_mem}', comment_text='% increase stack frame back to this function', comment_position='inline')
         # reload register
+        # TODO ADD THIS AS ELSE....
         self.__load_word(b_list, acc_reg)
         # store the return value in the accumulated register
         if base.sem_rec.type is not None and base.sem_rec.type.enum != TypeEnum.Void:
@@ -373,6 +377,8 @@ class CodeGenerator(Visitor):
         self.__load_word(node.factor, val_reg, use_temp=use_temp)
         self.__add_to_code_stream(f'not {temp_reg},{val_reg}', comment_text='% perform negation', comment_position='inline')
         self.__store_word(node, temp_reg)
+        self.registers.push(val_reg)
+        self.registers.push(temp_reg)
 
     def __if(self, node: If):
         self.stream_stack_key.pop()
@@ -457,7 +463,10 @@ class CodeGenerator(Visitor):
         stack_instr = f'subi r14,r14,-{self.current_scope.req_mem}'
         comment = '% decrement stack frame'
         self.__add_to_code_stream(stack_instr, comment_text=comment, comment_position='inline')
-        self.__store_word(node.var, 'r13', use_temp=use_temp)
+        # load VARIABLE location
+        self.__load_word(node.var, val_reg)
+        # then load the variable
+        self.__store_word(f'0({val_reg})', 'r13', use_temp=use_temp)
         self.registers.push(val_reg)
         self.registers.push(buf_reg)
 
@@ -502,6 +511,7 @@ class CodeGenerator(Visitor):
                 self.__add_to_code_stream(f'lw {inter_reg},{self.__get_var_offset_str(left_op.temp_var)}')
                 offset = f'0({inter_reg})'
                 comment = f'% store value in {left_op.temp_var.name}'
+                self.registers.push(inter_reg)
             else:
                 var = left_op.temp_var if use_temp else left_op.sem_rec
                 offset = self.__get_var_offset_str(var)

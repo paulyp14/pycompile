@@ -119,8 +119,8 @@ class MemoryAllocator(Visitor):
         if len(b_list.get_children()) == 0:
             return
 
-        temp_name = f'$temp_{self.current_scope.next_temp_var_id()}'
-        temp_rec = SemanticRecord(temp_name, Kind.Variable, record_type=Type(TypeEnum.Integer, 'integer'))
+        # temp_name = f'$temp_{self.current_scope.next_temp_var_id()}'
+        # temp_rec = SemanticRecord(temp_name, Kind.Variable, record_type=Type(TypeEnum.Integer, 'integer'))
         # self.current_scope.add_record(temp_rec)
         # b_list.temp_var = temp_rec
 
