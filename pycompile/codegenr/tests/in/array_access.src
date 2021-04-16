@@ -1,19 +1,28 @@
 class A {
-    public integer aOne[20][3][30];
+    public integer aOne[10][3][5];
 };
 
 class B {
    public float bOne;
-   public A aOne;
+   public A aOne[2];
 };
 
 main {
     var {
         integer x;
-        float y;
-        integer z[10][15];
-        B myB;
+        integer y;
+        B myB[2];
     }
-    z[9][10] = 12;
-    write(z[9][10]);
+    x = (2 * 3) - 3 - (2 * 10 - 19);
+    y = x * 3;
+    // z[9][10] = 12;
+    // two[2][2][(2 * 3) - 3 - (2 * 10 - 19)] = 14;
+    // let's get fucking freaky
+    myB[1].aOne[0].aOne[x][y][y - x] = 15;
+
+
+    // write(z[9][10]);
+    // write(two[2][2][2]);
+    // getting freaky
+    write(myB[1].aOne[0].aOne[x][y][y - x]);
 }

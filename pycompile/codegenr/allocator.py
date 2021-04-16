@@ -16,13 +16,15 @@ class MemoryByteSize(Enum):
     String = 4
     Integer = 4
     Float = 8
+    Void = 0
 
     @staticmethod
     def get_allocated_size(rec_type: TypeEnum) -> MemoryByteSize:
         trans = {
             TypeEnum.Float: MemoryByteSize.Float,
             TypeEnum.Integer: MemoryByteSize.Integer,
-            TypeEnum.String: MemoryByteSize.String
+            TypeEnum.String: MemoryByteSize.String,
+            TypeEnum.Void: MemoryByteSize.Void
         }
         return trans[rec_type]
 
@@ -45,11 +47,18 @@ class MemoryAllocator(Visitor):
 
     def visit(self, node: AbstractSyntaxNode):
         if not self.final_pass and node.sym_table is not None:
+            ret_size = None
             if isinstance(node.parent, ProgramNode) or isinstance(node, ProgramNode):
                 is_function = False
             else:
                 is_function = node.sem_rec.kind == Kind.Function
-            node.sym_table.compute_size(self, self.first_pass, is_function)
+                if is_function:
+                    if node.sem_rec.type.enum in (TypeEnum.Float, TypeEnum.Integer, TypeEnum.Void, TypeEnum.String):
+                        ret_size = MemoryByteSize.get_allocated_size(node.sem_rec.type.enum).value
+                    else:
+                        ret_size = self.global_table.records[node.sem_rec.type.type_name].table_link.req_mem
+                    node.sem_rec.return_size = ret_size
+            node.sym_table.compute_size(self, self.first_pass, is_function, ret_size=ret_size)
 
         if not self.final_pass and not self.first_pass:
             if isinstance(node, Factor):
@@ -100,6 +109,7 @@ class MemoryAllocator(Visitor):
                 self.__process_func_call(base, comps[list_idx])
             else:
                 self.__process_func_call(base, comps[list_idx], prev=comps[list_idx - 3], p_list=comps[list_idx - 2])
+        # TODO DON'T CREATE TEMP VAR IF LAST BASE IS FUNC, AND RETURN TYPE IS VOID
         temp_name = f'$temp_{self.current_scope.next_temp_var_id()}'
         temp_rec = SemanticRecord(temp_name, Kind.Variable, record_type=node.sem_rec.type)
         self.current_scope.add_record(temp_rec)
@@ -115,7 +125,10 @@ class MemoryAllocator(Visitor):
         # b_list.temp_var = temp_rec
 
     def __process_func_call(self, base: AbstractSyntaxNode, b_list: AbstractSyntaxNode, prev: AbstractSyntaxNode = None, p_list: AbstractSyntaxNode = None):
-        pass
+        temp_name = f'$temp_{self.current_scope.next_temp_var_id()}'
+        temp_rec = SemanticRecord(temp_name, Kind.Variable, record_type=Type(TypeEnum.Integer, 'integer'))
+        self.current_scope.add_record(temp_rec)
+        b_list.temp_var = temp_rec
 
     def __signed(self, node: Signed):
         if node.op == '+':

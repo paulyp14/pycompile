@@ -4,7 +4,7 @@ from pycompile.utils.stack import Stack
 from pycompile.parser.syntax.node import *
 from pycompile.symbol.visitor import Visitor
 from pycompile.symbol.stable import SymbolTable
-from pycompile.symbol.record import SemanticRecord
+from pycompile.symbol.record import SemanticRecord, Kind, TypeEnum
 
 
 class CodeGenerator(Visitor):
@@ -25,7 +25,7 @@ class CodeGenerator(Visitor):
         '<>': 'cne'
     }
 
-    req_comment_len = 100
+    req_comment_len = 150
     max_indent = 15
     max_istr = 30
 
@@ -37,9 +37,12 @@ class CodeGenerator(Visitor):
             self.registers.push(f"r{i}")
         # streams
         self.data_stream: List[str] = []
-        self.code_stream: List[str] = []
+        self.func_stream: List[str] = []
+        self.main_stream: List[str] = []
+        self.code_stream: List[str] = self.func_stream
 
         self.accept: bool = False
+        self.in_main: bool = False
         self.current_offset: int = 0
         self.result_stack: Stack = Stack()
         self.current_scope: Optional[SymbolTable] = None
@@ -57,6 +60,14 @@ class CodeGenerator(Visitor):
         idx = self.current_label_idxs[key]
         self.current_label_idxs[key] += 1
         return f'{key}_{idx}'
+
+    def __get_func_label(self, func_name: str) -> str:
+        as_label = f'F_{func_name}'
+        if as_label not in self.current_label_idxs.keys():
+            self.current_label_idxs[as_label] = 0
+        final_label = f'{as_label}_{self.current_label_idxs[as_label]}'
+        self.current_label_idxs[as_label] += 1
+        return final_label
 
     def __add_to_code_stream(self, instruction: str, label: str = None, comment_text: str = None, comment_position: str = 'above', add_label: bool = True):
         stream_obj = None
@@ -116,15 +127,29 @@ class CodeGenerator(Visitor):
 
     def pre_visit(self, node: AbstractSyntaxNode):
         if isinstance(node, ProgramNode):
+            max_len = max([len(rec.name) for rec in self.global_table.records.values() if rec.kind == Kind.Function])
+            self.max_indent = max(max_len + 8, self.max_indent)
+
+        elif isinstance(node, FuncBody):
+            self.accept = True
+
+        if isinstance(node, FuncBody) and isinstance(node.parent, ProgramNode):
+            self.in_main = True
+            self.code_stream = self.main_stream
             self.__add_to_code_stream('entry', comment_text=self.__format_visual_break('BEGIN PROGRAM'))
             self.__add_to_code_stream('addi r10,r0,topaddr')
             self.__add_to_code_stream('subi r10,r10,4')
             self.__add_to_code_stream('subi r14,r10,0')
             self.data_stream.append(self.__format_visual_break('MEMORY ALLOCATION'))
             self.__add_to_data_stream(size=20, label='buf', comment_text='% RESERVE BUFFER FOR WRITE FUNCTION', comment_position='inline')
+        elif isinstance(node, FuncBody):
+            # set up function....
+            func_name = node.parent.sem_rec.get_func_decl()
+            self.next_label = self.__get_func_label(node.parent.sem_rec.name)
+            node.parent.sem_rec.func_label = self.next_label
+            offset = 0 - node.parent.sem_rec.return_size
+            self.__add_to_code_stream(f'sw {offset}(r14),r15', comment_text=self.__format_visual_break(f'START - definition for: {func_name}'))
 
-        if isinstance(node, FuncBody) and isinstance(node.parent, ProgramNode):
-            self.accept = True
         elif isinstance(node, (If, While)):
             self.control_flow_node_stack.push(node)
             if isinstance(node, If):
@@ -150,6 +175,8 @@ class CodeGenerator(Visitor):
     def visit(self, node: AbstractSyntaxNode):
         if isinstance(node, ProgramNode):
             self.__add_to_code_stream('hlt', comment_text=self.__format_visual_break('END PROGRAM'), comment_position='below')
+            # merge func stream into code stream
+            self.code_stream.extend(self.func_stream)
 
         elif self.accept and isinstance(node, VarDecl):
             # entry = self.global_table.records['main'].table_link.records[]
@@ -168,7 +195,7 @@ class CodeGenerator(Visitor):
                     use_temp = node.child.temp_var is not None
                     if use_temp:
                         node.temp_var = node.child.temp_var
-                        node.temp_var.from_var = True
+                        node.temp_var.from_var = isinstance(node.child, Var)
                     else:
                         node.sem_rec = node.child.sem_rec
             elif isinstance(node, (ArithExpr, Expr, Term)):
@@ -201,9 +228,30 @@ class CodeGenerator(Visitor):
                 self.__if(node)
             elif isinstance(node, While):
                 self.__while(node)
+            elif isinstance(node, Return):
+                self.__return(node)
         # pop
         if node.sym_table is not None:
             self.current_scope = None
+        if isinstance(node, FuncBody):
+            self.accept = False
+
+        if isinstance(node, FuncBody) and isinstance(node.parent, ProgramNode):
+            pass
+        elif isinstance(node, FuncBody):
+            self.__end_func(node)
+
+    def __return(self, node: Return):
+        temp_reg = self.registers.pop()
+        self.__load_word(node.expr, temp_reg)
+        self.__store_word('0(r14)', temp_reg, comment='% put return value on stack')
+        self.registers.push(temp_reg)
+
+    def __end_func(self, node: FuncBody):
+        func_name = node.parent.sem_rec.get_func_decl()
+        offset = 0 - node.parent.sem_rec.return_size
+        self.__add_to_code_stream(f'lw r15,{offset}(r14)',comment_text='% retrieve r15', comment_position='inline')
+        self.__add_to_code_stream('jr r15', comment_text=self.__format_visual_break(f'END - definition for: {func_name}'), comment_position='below')
 
     def __process_var(self, node: Var):
         comps = node.get_children()
@@ -218,13 +266,18 @@ class CodeGenerator(Visitor):
             is_var = isinstance(comps[list_idx], IndList)
             if is_var and idx == 0:
                 self.__process_var_access(base, comps[list_idx], temp_reg)
-                self.__add_to_code_stream(f'sub {acc_reg},{acc_reg},{temp_reg}', comment_text='% load position of index', comment_position='inline')
             elif is_var:
-                self.__process_var_access(base, comps[list_idx], temp_reg, prev=comps[list_idx - 3], prev_list=comps[list_idx - 2])
-            elif idx == 0:
-                self.__process_func_call(base, comps[list_idx])
+                self.__process_var_access(base, comps[list_idx], temp_reg, prev=comps[list_idx - 3], p_list=comps[list_idx - 2])
             else:
-                self.__process_func_call(base, comps[list_idx], prev=comps[list_idx - 3], prev_list=comps[list_idx - 2])
+                self.__store_word(node, temp_reg)
+                self.__process_func_call(base, comps[list_idx], acc_reg)
+                self.__load_word(node, temp_reg)
+            if is_var:
+                # subtract
+                self.__add_to_code_stream(f'sub {acc_reg},{acc_reg},{temp_reg}', comment_text='% load position of index', comment_position='inline')
+            else:
+                # TODO this won't work if the function call is not at the end of the expression....
+                pass
         self.__store_word(node, acc_reg)
         self.registers.push(temp_reg)
         self.registers.push(acc_reg)
@@ -244,12 +297,16 @@ class CodeGenerator(Visitor):
                 self.__add_to_code_stream(f'mul {acc_reg},{acc_reg},{temp_reg}', comment_text='% accumulate array indexes', comment_position='inline')
         else:
             # not an array
+            # TODO SHOULD THIS BE 0???
             self.__add_to_code_stream(f'addi {acc_reg},r0,{type_size}', comment_text='% no array indexes to calculate', comment_position='inline')
+            # self.__add_to_code_stream(f'addi {acc_reg},r0,0', comment_text='% no array indexes to calculate',
+            #                           comment_position='inline')
         if prev is None:
             # calculate offset from the top of the frame pointer
             self.__add_to_code_stream(f'subi {temp_reg},r14,{base.sem_rec.mem_offset}', comment_text='% calculate beginning of array from stack frame point', comment_position='inline')
         else:
-            pass
+            # calculate the offset from the scope....
+            self.__add_to_code_stream(f'subi {temp_reg},r0,{base.sem_rec.mem_offset}', comment_text='% calculate member access from offset of record in class', comment_position='inline')
         self.__add_to_code_stream(f'sub {temp_reg},{temp_reg},{acc_reg}', comment_text='% calculate array index in memory', comment_position='inline')
         self.__add_to_code_stream(f'sub {outer_reg},r0,{temp_reg}')
         self.registers.push(temp_reg)
@@ -262,8 +319,31 @@ class CodeGenerator(Visitor):
         else:
             return trans[type_.type_name]
 
-    def __process_func_call(self, base: AbstractSyntaxNode, b_list: AbstractSyntaxNode, prev: AbstractSyntaxNode = None, p_list: AbstractSyntaxNode = None):
-        pass
+    def __process_func_call(self, base: AbstractSyntaxNode, b_list: AbstractSyntaxNode, acc_reg: str = None):
+        params = [param for param in base.sem_rec.table_link.records.values() if param.kind == Kind.Parameter]
+        for np, sp in zip(b_list.get_children(), params):
+            reg = self.registers.pop()
+            self.__load_word(np, reg)
+            offset = 0 - (self.current_scope.req_mem + sp.mem_offset)
+            self.__add_to_code_stream(f'sw {offset}(r14),{reg}', comment_text='% passing function param', comment_position='inline')
+            self.registers.push(reg)
+        # TODO figure out where the reference gets broken
+        if base.sem_rec.get_name() in self.global_table.records.keys():
+            master_rec = self.global_table.records[base.sem_rec.get_name()]
+        else:
+            master_rec = self.global_table.records[base.sem_rec.get_func_decl()]
+        # save register before jumping
+        self.__store_word(b_list, acc_reg)
+        # stack ops and jump
+        self.__add_to_code_stream(f'subi r14,r14,{self.current_scope.req_mem}', comment_text='% decrement stack frame to function', comment_position='inline')
+        self.__add_to_code_stream(f'jl r15,{master_rec.func_label}')
+        self.__add_to_code_stream(f'addi r14,r14,{self.current_scope.req_mem}', comment_text='% increase stack frame back to this function', comment_position='inline')
+        # reload register
+        self.__load_word(b_list, acc_reg)
+        # store the return value in the accumulated register
+        if base.sem_rec.type is not None and base.sem_rec.type.enum != TypeEnum.Void:
+            offset = 0 - self.current_scope.req_mem
+            self.__add_to_code_stream(f'lw {acc_reg},{offset}(r14)', comment_text='% get the return value', comment_position='inline')
 
     def __signed(self, node: Signed):
         if node.op == '+':
@@ -374,6 +454,9 @@ class CodeGenerator(Visitor):
         self.__add_to_code_stream('jl r15,getstr', comment_text='% jump to getstr subroutine', comment_position='inline')
         self.__add_to_code_stream('jl r15,strint', comment_text='% jump to strint subroutine', comment_position='inline')
         use_temp = node.var.temp_var is not None
+        stack_instr = f'subi r14,r14,-{self.current_scope.req_mem}'
+        comment = '% decrement stack frame'
+        self.__add_to_code_stream(stack_instr, comment_text=comment, comment_position='inline')
         self.__store_word(node.var, 'r13', use_temp=use_temp)
         self.registers.push(val_reg)
         self.registers.push(buf_reg)

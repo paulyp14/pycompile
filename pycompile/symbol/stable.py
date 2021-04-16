@@ -20,8 +20,8 @@ class SymbolTable:
         self.temp_var_id += 1
         return idx
 
-    def compute_size(self, computer, first_pass: bool, is_function: bool):
-        self.req_mem = 0 if not is_function else 4
+    def compute_size(self, computer, first_pass: bool, is_function: bool, ret_size: int):
+        self.req_mem = 0 if not is_function else (4 + ret_size)
         for record in self.records.values():
             if record.kind in (Kind.Variable, Kind.Parameter):
                 mem_size = computer.compute_from_record(record, first_pass)

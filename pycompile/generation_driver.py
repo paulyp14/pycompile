@@ -35,6 +35,10 @@ def analyze_test_file(input_file: Path, output_dir: str):
         for code in gnrtr.code_stream + gnrtr.data_stream:
             f.write(code + '\n')
 
+    with open(f'C:\\Users\\flyin\\Projects\\Concordia\\comp-442\\moon\\test_files\\{input_file.stem}.moon', 'w') as f:
+        for code in gnrtr.code_stream + gnrtr.data_stream:
+            f.write(code + '\n')
+
     # all_errors = []
     # for error in stb.errors + tc.errors:
     #     if 'line: ' not in error.args[0]:
@@ -61,7 +65,9 @@ def run_tests(test_dir: str, output_dir: str):
         # if test_file.suffix == '.src' and test_file.stem == 'simple_while':
         # if test_file.suffix == '.src' and test_file.stem == 'simple_main':
         # if test_file.suffix == '.src' and test_file.stem == 'read_test':
-        if test_file.suffix == '.src' and test_file.stem == 'array_access':
+        # if test_file.suffix == '.src' and test_file.stem == 'array_access':
+        if test_file.suffix == '.src' and test_file.stem == 'function_calls':
+        # if test_file.suffix == '.src' and test_file.stem == 'simple_test':
         # if test_file.suffix == '.src':
             analyze_test_file(test_file, output_dir)
 

@@ -596,7 +596,7 @@ class TypeChecker(Visitor):
                             if func_rec is not None:
                                 not_found = False
                                 final_rec = func_rec
-                                base.sem_rec = record
+                                base.sem_rec = func_rec
                                 types.append(TypeRecord(func_rec.type))
                                 break
                     scope_counter -= 1

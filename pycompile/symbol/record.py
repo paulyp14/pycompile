@@ -131,6 +131,8 @@ class SemanticRecord:
         self.memory_size: int = 0
         self.mem_offset: Optional[int] = None
         self.from_var: bool = False
+        self.func_label: Optional[str] = None
+        self.return_size: Optional[int] = None
 
         self.RECORD_LIST.append(self)
 
