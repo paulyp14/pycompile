@@ -52,7 +52,7 @@ class CodeGenerator(Visitor):
             'if': 0,
             'while': 0
         }
-        self.next_label: Queue = Queue()
+        self.next_label: Optional[str] = None
         self.stream_stack_key: Stack() = Stack()
         self.control_flow_node_stack: Stack = Stack()
         self.control_flow_stream_stack: Stack = Stack()
@@ -79,16 +79,14 @@ class CodeGenerator(Visitor):
                 label = self.control_flow_stream_stack.peek()['label']
                 if self.stream_stack_key.peek() not in ('if', 'while'):
                     label = f'{label}_{self.stream_stack_key.peek()}'
-        if not self.next_label.is_empty():
+        if self.next_label is not None:
             if label is not None:
-                self.next_label.add(label)
-            # go through the build up of labels
-            while len(self.next_label) > 1:
-                cur_lab = self.next_label.remove()
-                next_lab = self.next_label.peek_first()
-                # need to add an intermediate label
-                self.__add_to_stream("CODE", instruction=f'j {next_lab}', label=cur_lab, comment_text='% add intermediate jump to prevent conflicting labels', comment_position='inline', stream_obj=stream_obj, add_label=add_label)
-            label = self.next_label.remove()
+                self.__add_to_stream("CODE", instruction=f'j {label}', label=self.next_label,
+                                     comment_text='% add intermediate jump to prevent conflicting labels',
+                                     comment_position='inline', stream_obj=stream_obj, add_label=add_label)
+            else:
+                label = self.next_label
+            self.next_label = None
         self.__add_to_stream("CODE", instruction=instruction, label=label, comment_text=comment_text, comment_position=comment_position, stream_obj=stream_obj, add_label=add_label)
 
     def __add_to_data_stream(self, size: int, label: str = None, comment_text: str = None, comment_position: str = 'above'):
@@ -151,7 +149,7 @@ class CodeGenerator(Visitor):
             # set up function....
             func_name = node.parent.sem_rec.get_func_decl()
             needed_label = self.__get_func_label(node.parent.sem_rec.name)
-            self.next_label.add(needed_label)
+            self.next_label = needed_label
             node.parent.sem_rec.func_label = needed_label
             offset = 0 - node.parent.sem_rec.return_size
             self.__add_to_code_stream(f'sw {offset}(r14),r15', comment_text=self.__format_visual_break(f'START - definition for: {func_name}'))
@@ -172,15 +170,15 @@ class CodeGenerator(Visitor):
     def mid_visit(self, child_idx: int, node: AbstractSyntaxNode):
         not_empty = not self.control_flow_node_stack.is_empty()
         if not_empty and isinstance(node, If) and isinstance(self.control_flow_node_stack.peek(), If):
-            if not self.next_label.is_empty():
+            if self.next_label is not None and 'while' in self.next_label:
                 # force evaluation
                 self.__add_to_code_stream('addi r0,r0,0', comment_text='% forcing insertion of next label', comment_position='inline')
             self.stream_stack_key.pop()
             self.stream_stack_key.push('then' if child_idx == 1 else 'else')
         elif not_empty and isinstance(node, While) and isinstance(self.control_flow_node_stack.peek(), While):
-            if not self.next_label.is_empty():
-                # force evaluation
-                self.__add_to_code_stream('addi r0,r0,0', comment_text='% forcing insertion of next label', comment_position='inline')
+            # if not self.next_label is not None:
+            #     # force evaluation
+            #     self.__add_to_code_stream('addi r0,r0,0', comment_text='% forcing insertion of next label', comment_position='inline')
             self.stream_stack_key.pop()
             self.stream_stack_key.push('then' if child_idx == 1 else 'UHOH')
 
@@ -448,9 +446,10 @@ class CodeGenerator(Visitor):
 
     def __if(self, node: If):
         self.stream_stack_key.pop()
-        # next_label = None
-        # if not self.next_label.is_empty():
-        #     next_label = self.next_label.remove()
+        next_label = None
+        if self.next_label is not None:
+            next_label = self.next_label
+            self.next_label = None
         cf_label = self.control_flow_stream_stack.peek()["label"]
         end_label = f'{cf_label}_end'
         else_label = f'{cf_label}_else'
@@ -467,8 +466,8 @@ class CodeGenerator(Visitor):
         self.stream_stack_key.pop()
         self.stream_stack_key.push('else')
         self.__add_to_code_stream(CodeGenerator.__format_visual_break(f"end of {cf_label}"))
-        # if next_label is not None:
-        #     self.__add_to_code_stream(instruction=f'j {end_label}', label=next_label, comment_text='% add intermediate jump to prevent conflicting labels', comment_position='inline')
+        if next_label is not None:
+            self.__add_to_code_stream(instruction=f'j {end_label}', label=next_label, comment_text='% add intermediate jump to prevent conflicting labels', comment_position='inline')
         self.stream_stack_key.pop()
         self.control_flow_node_stack.pop()
         cf_dict = self.control_flow_stream_stack.pop()
@@ -478,13 +477,14 @@ class CodeGenerator(Visitor):
                 line = CodeGenerator.__format_visual_break(line, use_indent=True)
             self.__add_to_code_stream(line, add_label=False)
         self.registers.push(reg)
-        self.next_label.add(end_label)
+        self.next_label = end_label
 
     def __while(self, node: While):
         reg = self.registers.pop()
-        # next_label = None
-        # if not self.next_label.is_empty():
-        #     next_label = self.next_label.remove()
+        next_label = None
+        if self.next_label is not None:
+            next_label = self.next_label
+            self.next_label = None
         cf_label = self.control_flow_stream_stack.peek()["label"]
         end_label = f'{cf_label}_end'
         self.stream_stack_key.push('while')
@@ -499,15 +499,15 @@ class CodeGenerator(Visitor):
         cf_dict = self.control_flow_stream_stack.pop()
         self.control_flow_node_stack.pop()
         self.stream_stack_key.pop()
-        # if next_label is not None:
-        #     self.__add_to_code_stream(instruction=f'j {end_label}', label=next_label, comment_text='% add intermediate jump to prevent conflicting labels', comment_position='inline')
+        if next_label is not None:
+            self.__add_to_code_stream(instruction=f'j {end_label}', label=next_label, comment_text='% add intermediate jump to prevent conflicting labels', comment_position='inline')
         for i, line in enumerate([f'begin {cf_label}'] + cf_dict['while'] + cf_dict['then']):
             if i == 0:
                 # add visual break
                 line = CodeGenerator.__format_visual_break(line, use_indent=True)
             self.__add_to_code_stream(line, add_label=False)
         self.registers.push(reg)
-        self.next_label.add(end_label)
+        self.next_label = end_label
 
     def __read(self, node: Read):
         val_reg = self.registers.pop()
