@@ -1,10 +1,11 @@
 from typing import List, Optional, Union
 
+from pycompile.utils.queue import Queue
 from pycompile.utils.stack import Stack
 from pycompile.parser.syntax.node import *
 from pycompile.symbol.visitor import Visitor
 from pycompile.symbol.stable import SymbolTable
-from pycompile.symbol.record import SemanticRecord, Kind, TypeEnum
+from pycompile.symbol.record import SemanticRecord, Kind, TypeEnum, TypeRecord
 
 
 class CodeGenerator(Visitor):
@@ -51,7 +52,7 @@ class CodeGenerator(Visitor):
             'if': 0,
             'while': 0
         }
-        self.next_label: Optional[str] = None
+        self.next_label: Queue = Queue()
         self.stream_stack_key: Stack() = Stack()
         self.control_flow_node_stack: Stack = Stack()
         self.control_flow_stream_stack: Stack = Stack()
@@ -78,13 +79,16 @@ class CodeGenerator(Visitor):
                 label = self.control_flow_stream_stack.peek()['label']
                 if self.stream_stack_key.peek() not in ('if', 'while'):
                     label = f'{label}_{self.stream_stack_key.peek()}'
-        if self.next_label is not None:
+        if not self.next_label.is_empty():
             if label is not None:
+                self.next_label.add(label)
+            # go through the build up of labels
+            while len(self.next_label) > 1:
+                cur_lab = self.next_label.remove()
+                next_lab = self.next_label.peek_first()
                 # need to add an intermediate label
-                self.__add_to_stream("CODE", instruction=f'j {label}', label=self.next_label, comment_text='% add intermediate jump to prevent conflicting labels', comment_position='inline', stream_obj=stream_obj, add_label=add_label)
-            else:
-                label = self.next_label
-            self.next_label = None
+                self.__add_to_stream("CODE", instruction=f'j {next_lab}', label=cur_lab, comment_text='% add intermediate jump to prevent conflicting labels', comment_position='inline', stream_obj=stream_obj, add_label=add_label)
+            label = self.next_label.remove()
         self.__add_to_stream("CODE", instruction=instruction, label=label, comment_text=comment_text, comment_position=comment_position, stream_obj=stream_obj, add_label=add_label)
 
     def __add_to_data_stream(self, size: int, label: str = None, comment_text: str = None, comment_position: str = 'above'):
@@ -146,8 +150,9 @@ class CodeGenerator(Visitor):
         elif isinstance(node, FuncBody):
             # set up function....
             func_name = node.parent.sem_rec.get_func_decl()
-            self.next_label = self.__get_func_label(node.parent.sem_rec.name)
-            node.parent.sem_rec.func_label = self.next_label
+            needed_label = self.__get_func_label(node.parent.sem_rec.name)
+            self.next_label.add(needed_label)
+            node.parent.sem_rec.func_label = needed_label
             offset = 0 - node.parent.sem_rec.return_size
             self.__add_to_code_stream(f'sw {offset}(r14),r15', comment_text=self.__format_visual_break(f'START - definition for: {func_name}'))
 
@@ -167,9 +172,15 @@ class CodeGenerator(Visitor):
     def mid_visit(self, child_idx: int, node: AbstractSyntaxNode):
         not_empty = not self.control_flow_node_stack.is_empty()
         if not_empty and isinstance(node, If) and isinstance(self.control_flow_node_stack.peek(), If):
+            if not self.next_label.is_empty():
+                # force evaluation
+                self.__add_to_code_stream('addi r0,r0,0', comment_text='% forcing insertion of next label', comment_position='inline')
             self.stream_stack_key.pop()
             self.stream_stack_key.push('then' if child_idx == 1 else 'else')
         elif not_empty and isinstance(node, While) and isinstance(self.control_flow_node_stack.peek(), While):
+            if not self.next_label.is_empty():
+                # force evaluation
+                self.__add_to_code_stream('addi r0,r0,0', comment_text='% forcing insertion of next label', comment_position='inline')
             self.stream_stack_key.pop()
             self.stream_stack_key.push('then' if child_idx == 1 else 'UHOH')
 
@@ -178,12 +189,6 @@ class CodeGenerator(Visitor):
             self.__add_to_code_stream('hlt', comment_text=self.__format_visual_break('END PROGRAM'), comment_position='below')
             # merge func stream into code stream
             self.code_stream.extend(self.func_stream)
-
-        elif self.accept and isinstance(node, VarDecl):
-            # entry = self.global_table.records['main'].table_link.records[]
-            # TODO no longer necessary i don't think
-            # self.__reserve_variable_memory(node)
-            pass
 
         elif self.accept:
             # mostly just moving the reserved register up the chain
@@ -300,13 +305,21 @@ class CodeGenerator(Visitor):
                 self.__add_to_code_stream(f'mul {acc_reg},{acc_reg},{temp_reg}', comment_text='% accumulate array indexes', comment_position='inline')
         else:
             # not an array
-            # TODO SHOULD THIS BE 0??? Seems like it should
-            # self.__add_to_code_stream(f'addi {acc_reg},r0,{type_size}', comment_text='% no array indexes to calculate', comment_position='inline')
             self.__add_to_code_stream(f'addi {acc_reg},r0,0', comment_text='% no array indexes to calculate',
                                       comment_position='inline')
         if prev is None:
             # calculate offset from the top of the frame pointer
-            self.__add_to_code_stream(f'subi {temp_reg},r14,{base.sem_rec.mem_offset}', comment_text='% calculate beginning of array from stack frame point', comment_position='inline')
+            # need to use the address if it's a complex type
+            if base.sem_rec.kind == Kind.Parameter and (base.sem_rec.is_array or base.sem_rec.type.enum == TypeEnum.Class):
+                # load the address in this function of the address in the calling scope
+                offset = 0 - base.sem_rec.mem_offset
+                instr = f'lw {temp_reg},{offset}(r14)'
+                comment = '% load the address of the variable in the outer scope'
+            else:
+                # simply load the address of the primitive type
+                instr = f'subi {temp_reg},r14,{base.sem_rec.mem_offset}'
+                comment = '% calculate beginning address of variable from stack frame point'
+            self.__add_to_code_stream(instr, comment_text=comment, comment_position='inline')
         else:
             # calculate the offset from the scope....
             self.__add_to_code_stream(f'subi {temp_reg},r0,{base.sem_rec.mem_offset}', comment_text='% calculate member access from offset of record in class', comment_position='inline')
@@ -326,11 +339,35 @@ class CodeGenerator(Visitor):
         params = [param for param in base.sem_rec.table_link.records.values() if param.kind == Kind.Parameter]
         for np, sp in zip(b_list.get_children(), params):
             reg = self.registers.pop()
-            self.__load_word(np, reg)
+            if (
+                # reference type
+                sp.type.enum == TypeEnum.Class or
+                (
+                    # both arrays
+                    (sp.is_array and np.type_rec.is_array) and
+                    # same number of dimensions
+                    (sp.dimensions == np.type_rec.dimensions) and
+                    # any declared dimensions in the semantic_record match with the
+                    (sp.dimension_dict is None or self.__validate_array(sp, np.type_rec))
+                )
+            ):
+                # we are dealing with an array, and we must copy the outer scope address of the array...
+                outer_scope_offset = 0 - np.temp_var.mem_offset
+                self.__add_to_code_stream(f'lw {reg},{outer_scope_offset}(r14)', comment_position='inline', comment_text='% load outer scope offset of reference-type param')
+                comment = '% passing address of reference type'
+                pass
+            else:
+                # simply COPY the simple values over
+                if sp.is_array or np.type_rec.is_array:
+                    print('UHOH, SOMETHING EXTREMELY WRONG')
+                self.__load_word(np, reg)
+                comment = '% passing function param'
+            # put the value in the offset for the function that is being jumped into
+            # the value will be the value of the param if it is a simple type,
+            # else, it will be the address of the param in the outer scope
             offset = 0 - (self.current_scope.req_mem + sp.mem_offset)
-            self.__add_to_code_stream(f'sw {offset}(r14),{reg}', comment_text='% passing function param', comment_position='inline')
+            self.__add_to_code_stream(f'sw {offset}(r14),{reg}', comment_text=comment, comment_position='inline')
             self.registers.push(reg)
-        # TODO figure out where the reference gets broken
         if base.sem_rec.get_name() in self.global_table.records.keys():
             master_rec = self.global_table.records[base.sem_rec.get_name()]
         else:
@@ -348,6 +385,14 @@ class CodeGenerator(Visitor):
         if base.sem_rec.type is not None and base.sem_rec.type.enum != TypeEnum.Void:
             offset = 0 - self.current_scope.req_mem
             self.__add_to_code_stream(f'lw {acc_reg},{offset}(r14)', comment_text='% get the return value', comment_position='inline')
+
+    def __validate_array(self, sem_rec: SemanticRecord, node_type: TypeRecord) -> bool:
+        validated = True
+        for key, value in sem_rec.dimension_dict.items():
+            validated = value == node_type.dimensions_dict.get(key)
+            if not validated:
+                break
+        return validated
 
     def __signed(self, node: Signed):
         if node.op == '+':
@@ -382,10 +427,9 @@ class CodeGenerator(Visitor):
 
     def __if(self, node: If):
         self.stream_stack_key.pop()
-        next_label = None
-        if self.next_label is not None:
-            next_label = self.next_label
-            self.next_label = None
+        # next_label = None
+        # if not self.next_label.is_empty():
+        #     next_label = self.next_label.remove()
         # TODO handle when else is empty....
         #      can then be empty?
         cf_label = self.control_flow_stream_stack.peek()["label"]
@@ -404,8 +448,8 @@ class CodeGenerator(Visitor):
         self.stream_stack_key.pop()
         self.stream_stack_key.push('else')
         self.__add_to_code_stream(CodeGenerator.__format_visual_break(f"end of {cf_label}"))
-        if next_label is not None:
-            self.__add_to_code_stream(instruction=f'j {end_label}', label=next_label, comment_text='% add intermediate jump to prevent conflicting labels', comment_position='inline')
+        # if next_label is not None:
+        #     self.__add_to_code_stream(instruction=f'j {end_label}', label=next_label, comment_text='% add intermediate jump to prevent conflicting labels', comment_position='inline')
         self.stream_stack_key.pop()
         self.control_flow_node_stack.pop()
         cf_dict = self.control_flow_stream_stack.pop()
@@ -415,14 +459,13 @@ class CodeGenerator(Visitor):
                 line = CodeGenerator.__format_visual_break(line, use_indent=True)
             self.__add_to_code_stream(line, add_label=False)
         self.registers.push(reg)
-        self.next_label = end_label
+        self.next_label.add(end_label)
 
     def __while(self, node: While):
         reg = self.registers.pop()
-        next_label = None
-        if self.next_label is not None:
-            next_label = self.next_label
-            self.next_label = None
+        # next_label = None
+        # if not self.next_label.is_empty():
+        #     next_label = self.next_label.remove()
         cf_label = self.control_flow_stream_stack.peek()["label"]
         end_label = f'{cf_label}_end'
         self.stream_stack_key.push('while')
@@ -437,15 +480,15 @@ class CodeGenerator(Visitor):
         cf_dict = self.control_flow_stream_stack.pop()
         self.control_flow_node_stack.pop()
         self.stream_stack_key.pop()
-        if next_label is not None:
-            self.__add_to_code_stream(instruction=f'j {end_label}', label=next_label, comment_text='% add intermediate jump to prevent conflicting labels', comment_position='inline')
+        # if next_label is not None:
+        #     self.__add_to_code_stream(instruction=f'j {end_label}', label=next_label, comment_text='% add intermediate jump to prevent conflicting labels', comment_position='inline')
         for i, line in enumerate([f'begin {cf_label}'] + cf_dict['while'] + cf_dict['then']):
             if i == 0:
                 # add visual break
                 line = CodeGenerator.__format_visual_break(line, use_indent=True)
             self.__add_to_code_stream(line, add_label=False)
         self.registers.push(reg)
-        self.next_label = end_label
+        self.next_label.add(end_label)
 
     def __read(self, node: Read):
         val_reg = self.registers.pop()
@@ -589,6 +632,3 @@ class CodeGenerator(Visitor):
     def __reserve_variable_memory(self, node: AbstractSyntaxNode):
         res_comment = f'% Reserve space for variable {node.sem_rec.name}'
         self.__add_to_data_stream(node.sem_rec.memory_size, comment_text=res_comment, comment_position='inline')
-
-    def finish(self):
-        print()

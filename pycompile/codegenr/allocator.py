@@ -139,7 +139,7 @@ class MemoryAllocator(Visitor):
         node.temp_var = temp_rec
 
     def __negation(self, node: Negation):
-        temp_name = temp_name = f'$temp_{self.current_scope.next_temp_var_id()}'
+        temp_name = f'$temp_{self.current_scope.next_temp_var_id()}'
         temp_rec = SemanticRecord(temp_name, Kind.Variable, record_type=node.type_rec.type)
         self.current_scope.add_record(temp_rec)
         node.temp_var = temp_rec
@@ -191,6 +191,9 @@ class MemoryAllocator(Visitor):
 
     def __validate_array(self, record: SemanticRecord) -> bool:
         # determines if array can be statically allocated
+        if record.kind == Kind.Parameter:
+            # array params are not allocated statically
+            return False
         if record.dimension_dict is None:
             return False
         if record.dimension_dict is not None and len(record.dimension_dict.keys()) < record.dimensions:

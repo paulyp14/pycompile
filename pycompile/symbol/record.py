@@ -261,11 +261,12 @@ class SemanticRecord:
 
 class TypeRecord:
 
-    def __init__(self, type: Type, is_array: bool = False, dimensions: int = 0, value: str = None):
+    def __init__(self, type: Type, is_array: bool = False, dimensions: int = 0, dimensions_dict: dict = None, value: str = None):
         self.type = type
         # TODO translate the value
         self.is_array: bool = is_array
         self.dimensions: int = dimensions
+        self.dimensions_dict: Optional[dict] = dimensions_dict
         self.value = value
         self.position: Optional[int] = None
 

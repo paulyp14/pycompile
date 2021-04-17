@@ -49,6 +49,7 @@ class Table:
             'ucalgary': {
                 'intnum': 'intNum',
                 'mult': '*',
+                'div': '/',
                 'lsqbr': '[',
                 'rpar': ')',
                 'floatnum': 'floatNum',

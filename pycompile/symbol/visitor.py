@@ -524,6 +524,19 @@ class TypeChecker(Visitor):
                 if record is not None:
                     final_rec = record
                     base.sem_rec = record
+                    num_kids = len(comps[list_idx].get_children())
+                    if num_kids > 0:
+                        dims = record.dimensions - num_kids
+                        is_array = dims > 0
+                        if is_array:
+                            # start at num_kids, get the remaining indexes, but translate them back to 0
+                            dim_dict = {(k - num_kids): v for k, v in list(record.dimension_dict.values())[num_kids:]}
+                        else:
+                            dim_dict = None
+                    else:
+                        is_array = record.is_array
+                        dims = record.dimensions
+                        dim_dict = record.dimension_dict
                     # TODO check for access modifiers
                     if record.member_of is not None and scope_rec.member_of is None:
                         # class member is being accessed from outside class scope
@@ -534,8 +547,9 @@ class TypeChecker(Visitor):
                     # have the record
                     type_rec = TypeRecord(
                         record.type,
-                        is_array=record.is_array,
-                        dimensions=record.dimensions
+                        is_array=is_array,
+                        dimensions=dims,
+                        dimensions_dict=dim_dict
                     )
                     type_rec.position = base.token.position
                     types.append(type_rec)
