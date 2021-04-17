@@ -54,8 +54,9 @@ def run_tests(test_dir: str, output_dir: str):
         # if test_file.suffix == '.src' and test_file.stem == 'simple_test':
         # if test_file.suffix == '.src' and test_file.stem == 'bubblesort':
         # if test_file.suffix == '.src' and test_file.stem == 'bubblesort_recursive':
-        if test_file.suffix == '.src' and test_file.stem == 'division_test':
-        # if test_file.suffix == '.src':
+        # if test_file.suffix == '.src' and test_file.stem == 'division_test':
+        # if test_file.suffix == '.src' and test_file.stem == 'member_functions':
+        if test_file.suffix == '.src':
             analyze_test_file(test_file, output_dir)
 
 

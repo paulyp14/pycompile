@@ -27,6 +27,7 @@ main {
         integer z;
     }
     x = 27;
+    read(x);
     y = 1 + 2 * 3;
     z = 15;
     if (x > y + 10)

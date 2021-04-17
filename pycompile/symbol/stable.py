@@ -1,6 +1,6 @@
 from __future__ import annotations
 from collections import OrderedDict
-from typing import Dict, List, Union
+from typing import Dict, List, Union, Optional
 
 from pycompile.symbol.error import SemanticWarning
 from pycompile.symbol.record import SemanticRecord, Kind, TypeRecord, TypeEnum
@@ -13,6 +13,7 @@ class SymbolTable:
         self.matched = False
         self.duplicated_generator: dict = {}
         self.req_mem: int = 0
+        self.instance_ref_addr: Optional[int] = None
         self.temp_var_id: int = 0
 
     def next_temp_var_id(self):
@@ -20,8 +21,11 @@ class SymbolTable:
         self.temp_var_id += 1
         return idx
 
-    def compute_size(self, computer, first_pass: bool, is_function: bool, ret_size: int):
-        self.req_mem = 0 if not is_function else (4 + ret_size)
+    def compute_size(self, computer, first_pass: bool, is_function: bool, ret_size: int, is_member_function: bool):
+        hidden_mem_size = 0 if not is_member_function else 4
+        self.req_mem = 0 if not is_function else (4 + hidden_mem_size + ret_size)
+        if is_member_function:
+            self.instance_ref_addr = 4 + ret_size
         for record in self.records.values():
             if record.kind in (Kind.Variable, Kind.Parameter):
                 mem_size = computer.compute_from_record(record, first_pass)

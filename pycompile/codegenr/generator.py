@@ -315,6 +315,14 @@ class CodeGenerator(Visitor):
                 offset = 0 - base.sem_rec.mem_offset
                 instr = f'lw {temp_reg},{offset}(r14)'
                 comment = '% load the address of the variable in the outer scope'
+            elif base.sem_rec.kind == Kind.Variable and base.sem_rec.member_of is not None:
+                # load the address in this function of the address in the calling scope
+                offset = 0 - self.current_scope.instance_ref_addr
+                instr = f'lw {temp_reg},{offset}(r14)'
+                comment = '% load the address of the instance whose function this is'
+                self.__add_to_code_stream(instr, comment_text=comment, comment_position='inline')
+                instr = f'subi {temp_reg},{temp_reg},{base.sem_rec.mem_offset}'
+                comment = '% calculate the offset of the member variable from the address of the instance'
             else:
                 # simply load the address of the primitive type
                 instr = f'subi {temp_reg},r14,{base.sem_rec.mem_offset}'
@@ -368,6 +376,19 @@ class CodeGenerator(Visitor):
             offset = 0 - (self.current_scope.req_mem + sp.mem_offset)
             self.__add_to_code_stream(f'sw {offset}(r14),{reg}', comment_text=comment, comment_position='inline')
             self.registers.push(reg)
+        # process member functions
+        if base.sem_rec.member_of is not None:
+            # need to put reference to the instance two spots below r14
+            # r14 --- top of function, return address
+            #     --- return type of function, if needed
+            #     --- instance reference, if needed
+            # this if the offset of the address to store reference to the object whose's function is being called
+            containing_class_offset = 0 - (self.current_scope.req_mem + base.sem_rec.table_link.instance_ref_addr)
+            # the address of the containing class is already in teh outer_reg
+            left_op = f'{containing_class_offset}(r14)'
+            instr = f'sw {left_op},{acc_reg}'
+            comment = '% pass the reference to the instance the member function is being called on'
+            self.__add_to_code_stream(instr, comment_text=comment, comment_position='inline')
         if base.sem_rec.get_name() in self.global_table.records.keys():
             master_rec = self.global_table.records[base.sem_rec.get_name()]
         else:
@@ -430,8 +451,6 @@ class CodeGenerator(Visitor):
         # next_label = None
         # if not self.next_label.is_empty():
         #     next_label = self.next_label.remove()
-        # TODO handle when else is empty....
-        #      can then be empty?
         cf_label = self.control_flow_stream_stack.peek()["label"]
         end_label = f'{cf_label}_end'
         else_label = f'{cf_label}_else'

@@ -49,16 +49,17 @@ class MemoryAllocator(Visitor):
         if not self.final_pass and node.sym_table is not None:
             ret_size = None
             if isinstance(node.parent, ProgramNode) or isinstance(node, ProgramNode):
-                is_function = False
+                is_function, is_member_function = False, False
             else:
                 is_function = node.sem_rec.kind == Kind.Function
+                is_member_function = is_function and node.sem_rec.member_of is not None
                 if is_function:
                     if node.sem_rec.type.enum in (TypeEnum.Float, TypeEnum.Integer, TypeEnum.Void, TypeEnum.String):
                         ret_size = MemoryByteSize.get_allocated_size(node.sem_rec.type.enum).value
                     else:
                         ret_size = self.global_table.records[node.sem_rec.type.type_name].table_link.req_mem
                     node.sem_rec.return_size = ret_size
-            node.sym_table.compute_size(self, self.first_pass, is_function, ret_size=ret_size)
+            node.sym_table.compute_size(self, self.first_pass, is_function, ret_size=ret_size, is_member_function=is_member_function)
 
         if not self.final_pass and not self.first_pass:
             if isinstance(node, Factor):
