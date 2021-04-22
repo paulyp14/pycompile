@@ -1,0 +1,31 @@
+class A {
+    private integer a;
+
+    public func funcA(integer a, integer b): integer;
+};
+
+func A::funcA(integer a, integer b): integer {
+    var {
+        integer x;
+    }
+    read(x);
+    write(x);
+    x = a * b;
+    return (x);
+}
+
+func free_func(integer a) : void {
+    write(a);
+}
+
+main {
+    var {
+        integer one;
+        integer two;
+        A myA;
+    }
+    one = 17;
+    two = 19;
+    myA.a = myA.funcA(one, two);
+    free_func(myA.a);
+}

@@ -1,0 +1,64 @@
+class A {
+    private integer a;
+    private integer b;
+
+    public func setA(integer x) : void;
+    public func setB(integer y) : void;
+    public func combine() : integer;
+    public func printOffsetA(integer arr[], integer size): void;
+    //public func recursiveCombine(integer num) : integer;
+};
+
+func A::setA(integer x) : void {
+    a = x;
+}
+
+func A::setB(integer y) : void {
+    b = y;
+}
+
+func A::combine() : integer {
+    return (a + b);
+}
+
+func A::printOffsetA(integer arr[], integer size) : void {
+    var {
+        integer x;
+    }
+    x = 0;
+    while (x < size) {
+        write(arr[x] + a);
+        x = x + 1;
+    };
+}
+
+/*
+func A::recursiveCombine(integer num) : integer {
+    if (num == 5)
+    then {
+        return (combine());
+    }
+    else {
+        return (recursiveCombine(num + 1));
+    };
+}
+*/
+
+main {
+    var {
+        integer x;
+        integer y;
+        A myA;
+    }
+    read(x);
+    read(y);
+    write(0);
+    write(0);
+    myA.setA(x);
+    myA.setB(y);
+    write(myA.a);
+    write(myA.b);
+    write(0);
+    write(0);
+    write(myA.combine());
+}

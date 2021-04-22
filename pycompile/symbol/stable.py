@@ -203,7 +203,8 @@ class SymbolTable:
                 lengths.append(value.table_link.max_len(pad=(pad + 6), class_rec=cur_class))
         if class_rec is not None and class_rec.inheritances is not None and len(class_rec.inheritances) > 0:
             lengths.append(len(f' inherit   | {", ".join(class_rec.inheritances)}'))
-        lengths.append(len(f' table: {self.name} '))
+        size_info = '' if self.name == 'global' else f'   || size: {self.req_mem}B'
+        lengths.append(len(f' table: {self.name} {size_info} '))
         return max(lengths) + (8 if has_table_children else + 2)
 
     def get_repr(self, left_pad: int = 0, right_pad: int = 0, parent_length: int = 0, class_rec=None) -> List[str]:
@@ -219,7 +220,8 @@ class SymbolTable:
             if value.table_link is not None:
                 cur_class = None if value.kind != Kind.Class else value
                 rows.extend(value.table_link.get_repr(left_pad=4, right_pad=2, parent_length=level_length - 8, class_rec=cur_class))
-        table_name_row = ' table: ' + self.name + ' '
+        size_info = f'   || size: {self.req_mem}B' if self.name != 'global' else ''
+        table_name_row = ' table: ' + self.name + f' {size_info} '
         table_name_row = f'{table_name_row}{(level_length - len(table_name_row)) * " "}'
         if class_rec is not None and class_rec.inheritances is not None and len(class_rec.inheritances) > 0:
             inherit_row = f' inherit   | {", ".join(class_rec.inheritances)}'

@@ -1,0 +1,12 @@
+main {
+    var {
+        integer x;
+        integer y;
+    }
+    y = -3 * 5;
+    write(y);
+    y = !y;
+    write(y);
+    read(x);
+    write(x);
+}

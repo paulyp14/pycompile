@@ -1,0 +1,36 @@
+class A {
+    public integer aOne[10][3][5];
+};
+
+class B {
+   public float bOne;
+   public A aOne[2];
+};
+
+func printer(B anInstanceOfB, integer x, integer y, integer recursiveCounter) : void {
+    if (recursiveCounter == 4)
+    then {
+        write(anInstanceOfB.aOne[0].aOne[x][y][y - x]);
+    } else {
+        printer(anInstanceOfB, x, y, recursiveCounter + 2);
+    };
+}
+
+main {
+    var {
+        integer x;
+        integer y;
+        B myB[2];
+    }
+    x = (2 * 3) - 3 - (2 * 10 - 19);
+    y = x * 3;
+    // let's get fucking freaky
+    myB[1].aOne[0].aOne[x][y][y - x] = 15;
+
+    // getting freaky
+    write(myB[1].aOne[0].aOne[x][y][y - x]);
+
+    write(0);
+    write(0);
+    printer(myB[1], x, y, 0);
+}

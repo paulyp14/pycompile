@@ -1,0 +1,12 @@
+main {
+    var {
+        integer x;
+        integer y;
+        integer z;
+    }
+
+    x = 67;
+    y = 31;
+    z = x / y;
+    write(z);
+}

@@ -187,7 +187,7 @@ class SemanticRecord:
         if self.dimensions > 0:
             for idx in range(self.dimensions):
                 if self.dimension_dict is not None:
-                    as_str += f'[{self.dimension_dict[idx] if self.dimension_dict[idx] is not None else ""}]'
+                    as_str += f'[{self.dimension_dict[idx] if self.dimension_dict.get(idx) is not None else ""}]'
                 else:
                     as_str += '[]'
         return as_str
@@ -230,7 +230,7 @@ class SemanticRecord:
             data_type_name = 'data' if self.member_of is not None else 'local'
             access_modifier = self.visibility.name.lower() if self.visibility is not None else ''
             vis = f' | {access_modifier}' if access_modifier != '' else ''
-            as_str = f' {data_type_name} | {self.name} | {self.f_param_repr()}{vis}'
+            as_str = f' {data_type_name} | {self.name} | {self.f_param_repr()}{vis}  || size: {self.memory_size}B '
             return [f'{as_str}{(min_len - len(as_str)) * " "}']
         elif self.kind == Kind.Function:
             as_str = f' function    | {self.name} '
@@ -248,7 +248,7 @@ class SemanticRecord:
             as_str = f'{as_str}{f_repr}{vis}'
             return [f'{as_str}{(min_len - len(as_str)) * " "}']
         elif self.kind == Kind.Parameter:
-            as_str = f' param    | {self.name} | {self.f_param_repr()} '
+            as_str = f' param    | {self.name} | {self.f_param_repr()} || size: {self.memory_size}B '
             return [f'{as_str}{(min_len - len(as_str)) * " "}']
         elif self.kind == Kind.InheritanceRelation:
             print('Here')

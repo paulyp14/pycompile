@@ -14,3 +14,4 @@ __pycache__
 *.outsemanticerrors
 *.outsymboltables
 *.moon
+*.pdf

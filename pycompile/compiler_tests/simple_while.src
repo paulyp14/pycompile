@@ -1,0 +1,15 @@
+main {
+    var {
+        integer z;
+        integer x;
+    }
+    z = 0;
+    while (z < 5) {
+        x = 1;
+        while (x <= 10) {
+            write((z * 10) + x);
+            x = x + 1;
+        };
+        z = z + 1;
+    };
+}
